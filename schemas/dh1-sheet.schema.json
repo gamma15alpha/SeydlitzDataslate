@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seydlitz-dataslate/schemas/dh1-sheet.schema.json",
+  "title": "Dark Heresy 1e sheet (sheetVersion 3)",
+  "description": "Лист Dark Heresy 1e. Отсутствующие поля читаются как пустые / по умолчанию. v1: только player, homeworld, career, rank; v2: + characteristics, modifiers; v3: + skills. Старые версии мигрируют с пустыми новыми полями.",
+  "type": "object",
+  "properties": {
+    "player": {
+      "type": "string"
+    },
+    "homeworld": {
+      "type": "string"
+    },
+    "career": {
+      "type": "string"
+    },
+    "rank": {
+      "type": "string"
+    },
+    "characteristics": {
+      "description": "Ключи: ws, bs, s, t, ag, int, per, wp, fel. Неизвестные ключи игнорируются.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/characteristic"
+      }
+    },
+    "modifiers": {
+      "description": "Временные модификаторы, введённые пользователем.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/modifier"
+      }
+    },
+    "skills": {
+      "description": "Изученные навыки; необученные базовые берутся из каталога контента.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/skill"
+      }
+    }
+  },
+  "$defs": {
+    "characteristic": {
+      "type": "object",
+      "properties": {
+        "base": {
+          "description": "Значение при создании; null — не введено.",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "advances": {
+          "description": "Шаги улучшения по +5 (0–4; вне диапазона — диагностика, не ошибка формата).",
+          "type": "integer",
+          "default": 0
+        },
+        "unnatural": {
+          "description": "Множитель бонуса (Unnatural); 1 — обычная характеристика.",
+          "type": "integer",
+          "default": 1
+        }
+      }
+    },
+    "modifier": {
+      "type": "object",
+      "required": [
+        "target",
+        "value"
+      ],
+      "properties": {
+        "target": {
+          "description": "Идентификатор стата, например characteristic.ag.",
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "skill"
+      ],
+      "properties": {
+        "skill": {
+          "type": "string",
+          "description": "Идентификатор навыка в контенте."
+        },
+        "specialization": {
+          "type": "string"
+        },
+        "training": {
+          "type": "integer",
+          "description": "1 — обучен, 2 — +10, 3 — +20 (вне диапазона — диагностика).",
+          "default": 1
+        }
+      }
+    }
+  }
+}

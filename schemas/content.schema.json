@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seydlitz-dataslate/schemas/content.schema.json",
+  "title": "Seydlitz Dataslate content pack",
+  "description": "Пакет контента игровой системы: конверт платформы + содержимое системы. Настоящий контент в репозиторий не коммитится — только мок-пакеты.",
+  "type": "object",
+  "required": [
+    "format",
+    "formatVersion",
+    "system",
+    "content"
+  ],
+  "properties": {
+    "format": {
+      "const": "seydlitz.content"
+    },
+    "formatVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Клиент отклоняет пакеты новее, чем понимает."
+    },
+    "system": {
+      "type": "string",
+      "examples": [
+        "dh1"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "description": "Ревизия пакета: растёт при каждом изменении контента."
+    },
+    "name": {
+      "type": "string"
+    },
+    "mock": {
+      "type": "boolean",
+      "default": false,
+      "description": "Выдуманные данные для разработки."
+    },
+    "content": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "system": {
+            "const": "dh1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "$ref": "dh1-content.schema.json"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "localizedText": {
+      "description": "Строка (русский) или переводы по двухбуквенному коду языка.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "minProperties": 1
+        }
+      ]
+    }
+  }
+}

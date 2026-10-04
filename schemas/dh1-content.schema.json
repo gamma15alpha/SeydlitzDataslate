@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seydlitz-dataslate/schemas/dh1-content.schema.json",
+  "title": "Dark Heresy 1e content",
+  "description": "Содержимое пакета контента DH1.",
+  "type": "object",
+  "properties": {
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "characteristic",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Стабильный идентификатор; на него ссылается лист персонажа."
+          },
+          "name": {
+            "$ref": "content.schema.json#/$defs/localizedText"
+          },
+          "characteristic": {
+            "enum": [
+              "ws",
+              "bs",
+              "s",
+              "t",
+              "ag",
+              "int",
+              "per",
+              "wp",
+              "fel"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "basic",
+              "advanced"
+            ],
+            "description": "basic — можно без обучения (половина характеристики); advanced — только с обучением."
+          },
+          "specializations": {
+            "type": "boolean",
+            "default": false,
+            "description": "Навык берётся по специализациям."
+          }
+        }
+      }
+    }
+  }
+}

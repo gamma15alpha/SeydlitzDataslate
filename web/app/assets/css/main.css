@@ -1,0 +1,35 @@
+/* Шрифты (SIL OFL, лицензии рядом в public/fonts): PT Mono — текст, Forum — надписи */
+@font-face {
+  font-family: 'PT Mono';
+  src: url('/fonts/PTMono-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Forum';
+  src: url('/fonts/Forum-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+/* Палитра когитатора (люминофор P1) */
+:root {
+  --screen: #030603;
+  --phosphor: #8dff7a;
+  --phosphor-dim: #4fa845;
+  --phosphor-glow: rgba(120, 255, 100, 0.28);
+  --amber: #ffb347;
+
+  --font-mono: 'PT Mono', 'DejaVu Sans Mono', monospace;
+  --font-inscription: 'Forum', Georgia, serif;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--screen);
+  color: var(--phosphor);
+  font-family: var(--font-mono);
+}

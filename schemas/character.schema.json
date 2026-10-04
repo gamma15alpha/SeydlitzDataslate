@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seydlitz-dataslate/schemas/character.schema.json",
+  "title": "Seydlitz Dataslate character",
+  "description": "Файл персонажа: конверт платформы + лист системы. Один формат для хранилища, экспорта и сервера.",
+  "type": "object",
+  "required": [
+    "format",
+    "formatVersion",
+    "id",
+    "system",
+    "sheetVersion",
+    "name",
+    "createdAt",
+    "updatedAt",
+    "sheet"
+  ],
+  "properties": {
+    "format": {
+      "const": "seydlitz.character"
+    },
+    "formatVersion": {
+      "description": "Версия конверта. Клиент отклоняет файлы новее, чем понимает.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "system": {
+      "description": "Идентификатор игровой системы; определяет схему поля sheet.",
+      "type": "string",
+      "examples": [
+        "dh1"
+      ]
+    },
+    "sheetVersion": {
+      "description": "Версия формата листа системы. Старые версии модуль системы мигрирует, новее — отклоняет.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sheet": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "system": {
+            "const": "dh1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sheet": {
+            "$ref": "dh1-sheet.schema.json"
+          }
+        }
+      }
+    }
+  ]
+}

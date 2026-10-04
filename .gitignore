@@ -1,0 +1,41 @@
+/docs/
+/content.local/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.mcp.json
+
+# Веб (Nuxt, Yarn 4)
+web/node_modules/
+web/.nuxt/
+web/.output/
+web/dist
+web/.data/
+web/.yarn/*
+!web/.yarn/patches
+!web/.yarn/plugins
+!web/.yarn/releases
+!web/.yarn/sdks
+!web/.yarn/versions
+web/.env
+web/.env.*
+
+# Android (Gradle)
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/*.keystore
+android/*.jks
+
+# Сервер (Go)
+server/bin/
+server/*.exe
+server/.env
+
+# Системное
+.DS_Store
