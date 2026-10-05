@@ -13,6 +13,7 @@ import kotlinx.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import space.seydlitz.dataslate.R
 import space.seydlitz.dataslate.api.ApiClient
 import space.seydlitz.dataslate.api.User
 
@@ -61,7 +62,7 @@ class AuthRepositoryTest {
         val repo = repo(MemoryStore()) {
             json("""{"error":"invalid login or password","code":"invalid_credentials"}""", HttpStatusCode.Unauthorized)
         }
-        assertEquals("Неверный логин или пароль", repo.login("player", "wrong")?.message())
+        assertEquals(UiText(R.string.error_invalid_credentials), repo.login("player", "wrong")?.message())
         assertEquals(AuthState.Loading, repo.state.value)
     }
 
@@ -72,9 +73,9 @@ class AuthRepositoryTest {
             json("""{"error":"x","code":"${if (status.value == 429) "rate_limited" else "internal"}"}""", status,
                 "Retry-After" to "120", "X-Request-ID" to "REQ42")
         }
-        assertEquals("Слишком много попыток. Повторите через 2 мин", repo.login("a", "b")?.message())
+        assertEquals(UiText(R.string.error_too_many, listOf(UiText(R.string.minutes, listOf(2)))), repo.login("a", "b")?.message())
         status = HttpStatusCode.InternalServerError
-        assertEquals("Ошибка сервера 500, код запроса REQ42", repo.login("a", "b")?.message())
+        assertEquals(UiText(R.string.error_server_with_id, listOf(500, "REQ42")), repo.login("a", "b")?.message())
     }
 
     @Test

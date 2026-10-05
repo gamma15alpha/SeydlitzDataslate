@@ -5,10 +5,11 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import space.seydlitz.dataslate.R
 import space.seydlitz.dataslate.api.ApiResult
 import space.seydlitz.dataslate.api.RegisterRequest
 
-data class FormStatus(val busy: Boolean = false, val error: String? = null)
+data class FormStatus(val busy: Boolean = false, val error: UiText? = null)
 
 class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
     val state = repo.state
@@ -24,7 +25,7 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
 
     fun register(invite: String, login: String, displayName: String, password: String, repeat: String) {
         if (password != repeat) {
-            _form.value = FormStatus(error = "Пароли не совпадают")
+            _form.value = FormStatus(error = UiText(R.string.passwords_mismatch))
             return
         }
         submit {

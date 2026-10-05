@@ -22,13 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import space.seydlitz.dataslate.R
 import space.seydlitz.dataslate.api.User
 import space.seydlitz.dataslate.auth.AuthState
 import space.seydlitz.dataslate.auth.AuthViewModel
 import space.seydlitz.dataslate.auth.SessionsViewModel
 
-private const val REVOKED_NOTICE =
-    "Сессия завершена: вход с этой сессией выполнен с другого устройства. Войдите снова и проверьте активные сессии."
 
 @Composable
 fun App(vm: AuthViewModel, sessionsVm: SessionsViewModel) {
@@ -44,7 +44,7 @@ fun App(vm: AuthViewModel, sessionsVm: SessionsViewModel) {
                 is AuthState.SignedOut -> if (registering) {
                     RegisterScreen(form, vm::register) { registering = false; vm.clearError() }
                 } else {
-                    LoginScreen(form, if (s.revoked) REVOKED_NOTICE else null, vm::login) { registering = true; vm.clearError() }
+                    LoginScreen(form, if (s.revoked) stringResource(R.string.revoked) else null, vm::login) { registering = true; vm.clearError() }
                 }
                 is AuthState.SignedIn -> if (showSessions) {
                     BackHandler { showSessions = false }
@@ -55,6 +55,8 @@ fun App(vm: AuthViewModel, sessionsVm: SessionsViewModel) {
                     HomeScreen(s.user, s.offline, { showSessions = true }, vm::logout)
                 }
             }
+            val onLoginOrHome = (state is AuthState.SignedOut && !registering) || (state is AuthState.SignedIn && !showSessions)
+            if (onLoginOrHome) LanguageSwitch(Modifier.align(Alignment.TopEnd).safeDrawingPadding())
         }
     }
 }
@@ -66,11 +68,11 @@ private fun HomeScreen(user: User, offline: Boolean, onSessions: () -> Unit, onL
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("SEYDLITZ DATASLATE", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.app_title), style = MaterialTheme.typography.headlineMedium)
         Text(user.displayName)
         Text("(${user.login})", color = MaterialTheme.colorScheme.secondary)
-        if (offline) Text("Нет связи с сервером — работа офлайн", color = MaterialTheme.colorScheme.error)
-        TextButton(onSessions) { Text("Активные сессии", color = MaterialTheme.colorScheme.secondary) }
-        OutlinedButton(onLogout) { Text("ВЫЙТИ") }
+        if (offline) Text(stringResource(R.string.offline), color = MaterialTheme.colorScheme.error)
+        TextButton(onSessions) { Text(stringResource(R.string.sessions_link), color = MaterialTheme.colorScheme.secondary) }
+        OutlinedButton(onLogout) { Text(stringResource(R.string.logout).uppercase()) }
     }
 }

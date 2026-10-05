@@ -29,6 +29,10 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew testDebugUnitTest
 
 `applicationId` после первой раздачи APK не меняется: другой идентификатор — это для Android другое приложение, данные не переедут.
 
+## Языки
+
+Тексты — `res/values/strings.xml` (русский, по умолчанию) и `res/values-en/strings.xml`; `StringsTest` падает, если перевод неполный. Язык — системный; на Android 13+ его можно выбрать для приложения в настройках системы.
+
 ## Авторизация
 
 - `api/` — клиент API; модели — по `schemas/openapi.yaml`. HTTP-ответ с ошибкой — значение `ApiResult.Failure` с кодом из тела, исключение сети — `ApiResult.Offline`.

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="login_title">Sign in</string>
+    <string name="login_submit">Sign in</string>
+    <string name="register_link">Register with an invite</string>
+    <string name="register_title">Registration</string>
+    <string name="register_submit">Register</string>
+    <string name="invite">Invite</string>
+    <string name="display_name_optional">Name (optional)</string>
+    <string name="password_repeat">Repeat password</string>
+    <string name="have_account">Already have an account — sign in</string>
+    <string name="passwords_mismatch">Passwords do not match</string>
+    <string name="offline">No connection to the server — working offline</string>
+    <string name="logout">Sign out</string>
+    <string name="revoked">Session ended: it was used from another device. Sign in again and check your active sessions.</string>
+
+    <string name="sessions_link">Active sessions</string>
+    <string name="sessions_title">Sessions</string>
+    <string name="this_device">— this device</string>
+    <string name="session_dates">signed in %1$s · active %2$s</string>
+    <string name="session_end">End</string>
+    <string name="sessions_end_others">Sign out on all other devices</string>
+    <string name="back">Back</string>
+    <string name="android_app">Android app</string>
+    <string name="unknown_device">Unknown device</string>
+
+    <string name="error_no_connection">No connection to the server</string>
+    <string name="error_server_with_id">Server error %1$d, request ID %2$s</string>
+    <string name="error_too_many">Too many attempts. Try again in %1$s</string>
+    <string name="seconds">%1$d s</string>
+    <string name="minutes">%1$d min</string>
+    <string name="error_invalid_credentials">Wrong login or password</string>
+    <string name="error_invalid_invite">The invite is invalid, expired or already used</string>
+    <string name="error_login_taken">This login is already taken</string>
+    <string name="error_invalid_login">Login: 3 to 32 characters — Latin letters, digits, “_”, “.”, “-”</string>
+    <string name="error_invalid_password">Password: 8 to 128 characters</string>
+    <string name="error_invalid_display_name">Name: at most 64 characters</string>
+</resources>

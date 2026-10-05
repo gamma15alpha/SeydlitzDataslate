@@ -29,6 +29,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import space.seydlitz.dataslate.R
 import space.seydlitz.dataslate.auth.FormStatus
 
 @Composable
@@ -36,10 +38,13 @@ fun LoginScreen(status: FormStatus, notice: String?, onLogin: (String, String) -
     var login by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
-    AuthForm("Вход", status, "Войти", { onLogin(login, password) }, "Регистрация по инвайту", onRegister) {
+    AuthForm(
+        stringResource(R.string.login_title), status, stringResource(R.string.login_submit), { onLogin(login, password) },
+        stringResource(R.string.register_link), onRegister,
+    ) {
         notice?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Field("Логин", login, { login = it })
-        Field("Пароль", password, { password = it }, password = true)
+        Field(stringResource(R.string.login), login, { login = it })
+        Field(stringResource(R.string.password), password, { password = it }, password = true)
     }
 }
 
@@ -52,14 +57,15 @@ fun RegisterScreen(status: FormStatus, onRegister: (String, String, String, Stri
     var repeat by rememberSaveable { mutableStateOf("") }
 
     AuthForm(
-        "Регистрация", status, "Зарегистрироваться", { onRegister(invite, login, displayName, password, repeat) },
-        "Уже есть аккаунт — войти", onBack,
+        stringResource(R.string.register_title), status, stringResource(R.string.register_submit),
+        { onRegister(invite, login, displayName, password, repeat) },
+        stringResource(R.string.have_account), onBack,
     ) {
-        Field("Инвайт", invite, { invite = it })
-        Field("Логин", login, { login = it })
-        Field("Имя (необязательно)", displayName, { displayName = it })
-        Field("Пароль", password, { password = it }, password = true)
-        Field("Пароль ещё раз", repeat, { repeat = it }, password = true)
+        Field(stringResource(R.string.invite), invite, { invite = it })
+        Field(stringResource(R.string.login), login, { login = it })
+        Field(stringResource(R.string.display_name_optional), displayName, { displayName = it })
+        Field(stringResource(R.string.password), password, { password = it }, password = true)
+        Field(stringResource(R.string.password_repeat), repeat, { repeat = it }, password = true)
     }
 }
 
@@ -86,7 +92,7 @@ private fun AuthForm(
         Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium)
         Column(Modifier.widthIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             fields()
-            status.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            status.error?.let { Text(it.resolve(), color = MaterialTheme.colorScheme.error) }
             OutlinedButton(onSubmit, Modifier.fillMaxWidth(), enabled = !status.busy) {
                 Text(if (status.busy) "…" else submitLabel.uppercase())
             }

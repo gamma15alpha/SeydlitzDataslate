@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_title" translatable="false">SEYDLITZ DATASLATE</string>
+
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="login_title">Вход</string>
+    <string name="login_submit">Войти</string>
+    <string name="register_link">Регистрация по инвайту</string>
+    <string name="register_title">Регистрация</string>
+    <string name="register_submit">Зарегистрироваться</string>
+    <string name="invite">Инвайт</string>
+    <string name="display_name_optional">Имя (необязательно)</string>
+    <string name="password_repeat">Пароль ещё раз</string>
+    <string name="have_account">Уже есть аккаунт — войти</string>
+    <string name="passwords_mismatch">Пароли не совпадают</string>
+    <string name="offline">Нет связи с сервером — работа офлайн</string>
+    <string name="logout">Выйти</string>
+    <string name="revoked">Сессия завершена: вход с этой сессией выполнен с другого устройства. Войдите снова и проверьте активные сессии.</string>
+
+    <string name="sessions_link">Активные сессии</string>
+    <string name="sessions_title">Сессии</string>
+    <string name="this_device">— это устройство</string>
+    <string name="session_dates">вход %1$s · активность %2$s</string>
+    <string name="session_end">Завершить</string>
+    <string name="sessions_end_others">Выйти на всех остальных устройствах</string>
+    <string name="back">Назад</string>
+    <string name="android_app">Android-приложение</string>
+    <string name="unknown_device">Неизвестное устройство</string>
+
+    <string name="error_no_connection">Нет связи с сервером</string>
+    <string name="error_server_with_id">Ошибка сервера %1$d, код запроса %2$s</string>
+    <string name="error_too_many">Слишком много попыток. Повторите через %1$s</string>
+    <string name="seconds">%1$d с</string>
+    <string name="minutes">%1$d мин</string>
+    <string name="error_invalid_credentials">Неверный логин или пароль</string>
+    <string name="error_invalid_invite">Инвайт недействителен, истёк или уже использован</string>
+    <string name="error_login_taken">Логин уже занят</string>
+    <string name="error_invalid_login">Логин: от 3 до 32 символов — латиница, цифры, «_», «.», «-»</string>
+    <string name="error_invalid_password">Пароль: от 8 до 128 символов</string>
+    <string name="error_invalid_display_name">Имя — не длиннее 64 символов</string>
+</resources>

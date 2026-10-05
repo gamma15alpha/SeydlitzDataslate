@@ -11,7 +11,7 @@ import space.seydlitz.dataslate.api.SessionInfo
 data class SessionsState(
     val sessions: List<SessionInfo> = emptyList(),
     val busy: Boolean = true,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 class SessionsViewModel(private val repo: AuthRepository) : ViewModel() {
@@ -34,7 +34,7 @@ class SessionsViewModel(private val repo: AuthRepository) : ViewModel() {
         viewModelScope.launch { load() }
     }
 
-    private suspend fun load(error: String? = null) {
+    private suspend fun load(error: UiText? = null) {
         _state.value = when (val r = repo.sessions()) {
             is ApiResult.Ok -> SessionsState(r.value, busy = false, error = error)
             is ApiResult.Problem -> _state.value.copy(busy = false, error = r.message())

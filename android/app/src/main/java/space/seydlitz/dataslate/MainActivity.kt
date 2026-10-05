@@ -1,7 +1,7 @@
 package space.seydlitz.dataslate
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -11,7 +11,8 @@ import space.seydlitz.dataslate.auth.AuthViewModel
 import space.seydlitz.dataslate.auth.SessionsViewModel
 import space.seydlitz.dataslate.ui.App
 
-class MainActivity : ComponentActivity() {
+// AppCompatActivity — для выбора языка в приложении (AppCompatDelegate.setApplicationLocales).
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
