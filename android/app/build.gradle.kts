@@ -35,6 +35,9 @@ android {
         }
     }
 
+    // Демо-анкета в debug читает примеры из schemas/examples — те же, что и веб.
+    sourceSets.getByName("debug").assets.directories.add("../../schemas/examples")
+
     // Язык приложения можно выбрать в настройках системы (Android 13+); список — из values-*/.
     androidResources {
         generateLocaleConfig = true
@@ -68,6 +71,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.markdown.renderer.m3)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

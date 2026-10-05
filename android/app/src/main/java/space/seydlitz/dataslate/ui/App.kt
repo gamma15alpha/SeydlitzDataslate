@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import space.seydlitz.dataslate.R
 import space.seydlitz.dataslate.api.User
+import space.seydlitz.dataslate.BuildConfig
 import space.seydlitz.dataslate.auth.AuthState
 import space.seydlitz.dataslate.auth.AuthViewModel
 import space.seydlitz.dataslate.auth.SessionsViewModel
@@ -36,6 +37,7 @@ fun App(vm: AuthViewModel, sessionsVm: SessionsViewModel) {
     val form by vm.form.collectAsStateWithLifecycle()
     var registering by rememberSaveable { mutableStateOf(false) }
     var showSessions by rememberSaveable { mutableStateOf(false) }
+    var showDemo by rememberSaveable { mutableStateOf(false) }
 
     DataslateTheme {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -46,23 +48,28 @@ fun App(vm: AuthViewModel, sessionsVm: SessionsViewModel) {
                 } else {
                     LoginScreen(form, if (s.revoked) stringResource(R.string.revoked) else null, vm::login) { registering = true; vm.clearError() }
                 }
-                is AuthState.SignedIn -> if (showSessions) {
-                    BackHandler { showSessions = false }
-                    LaunchedEffect(Unit) { sessionsVm.reload() }
-                    val sessions by sessionsVm.state.collectAsStateWithLifecycle()
-                    SessionsScreen(sessions, sessionsVm::end, sessionsVm::endOthers) { showSessions = false }
-                } else {
-                    HomeScreen(s.user, s.offline, { showSessions = true }, vm::logout)
+                is AuthState.SignedIn -> when {
+                    showSessions -> {
+                        BackHandler { showSessions = false }
+                        LaunchedEffect(Unit) { sessionsVm.reload() }
+                        val sessions by sessionsVm.state.collectAsStateWithLifecycle()
+                        SessionsScreen(sessions, sessionsVm::end, sessionsVm::endOthers) { showSessions = false }
+                    }
+                    showDemo -> {
+                        BackHandler { showDemo = false }
+                        DemoScreen { showDemo = false }
+                    }
+                    else -> HomeScreen(s.user, s.offline, { showSessions = true }, { showDemo = true }, vm::logout)
                 }
             }
-            val onLoginOrHome = (state is AuthState.SignedOut && !registering) || (state is AuthState.SignedIn && !showSessions)
+            val onLoginOrHome = (state is AuthState.SignedOut && !registering) || (state is AuthState.SignedIn && !showSessions && !showDemo)
             if (onLoginOrHome) LanguageSwitch(Modifier.align(Alignment.TopEnd).safeDrawingPadding())
         }
     }
 }
 
 @Composable
-private fun HomeScreen(user: User, offline: Boolean, onSessions: () -> Unit, onLogout: () -> Unit) {
+private fun HomeScreen(user: User, offline: Boolean, onSessions: () -> Unit, onDemo: () -> Unit, onLogout: () -> Unit) {
     Column(
         Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
@@ -72,6 +79,7 @@ private fun HomeScreen(user: User, offline: Boolean, onSessions: () -> Unit, onL
         Text(user.displayName)
         Text("(${user.login})", color = MaterialTheme.colorScheme.secondary)
         if (offline) Text(stringResource(R.string.offline), color = MaterialTheme.colorScheme.error)
+        if (BuildConfig.DEBUG) TextButton(onDemo) { Text(stringResource(R.string.demo_link), color = MaterialTheme.colorScheme.secondary) }
         TextButton(onSessions) { Text(stringResource(R.string.sessions_link), color = MaterialTheme.colorScheme.secondary) }
         OutlinedButton(onLogout) { Text(stringResource(R.string.logout).uppercase()) }
     }

@@ -6,6 +6,7 @@ import io.ktor.client.engine.okhttp.OkHttp
 import space.seydlitz.dataslate.api.ApiClient
 import space.seydlitz.dataslate.auth.AuthRepository
 import space.seydlitz.dataslate.auth.KeystoreSessionStore
+import space.seydlitz.dataslate.content.ContentLanguageStore
 
 class DataslateApp : Application() {
     // Узнаваемо в списке сессий: «SeydlitzDataslate-Android/0.1.0 (Android 15; Pixel 8)».
@@ -16,4 +17,6 @@ class DataslateApp : Application() {
             ApiClient(BuildConfig.API_URL, OkHttp.create(), userAgent, token, onNewToken)
         }
     }
+
+    val contentLanguage by lazy { ContentLanguageStore(this) }
 }

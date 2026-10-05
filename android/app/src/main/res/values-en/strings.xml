@@ -26,6 +26,22 @@
     <string name="android_app">Android app</string>
     <string name="unknown_device">Unknown device</string>
 
+    <string name="demo_link">Demo sheet</string>
+    <string name="demo_title">Demo sheet</string>
+    <string name="player">Player</string>
+    <string name="homeworld">Home world</string>
+    <string name="career">Career</string>
+    <string name="rank">Rank</string>
+    <string name="characteristics">Characteristics</string>
+    <string name="skills">Skills</string>
+    <string name="trained">trained</string>
+    <string name="training_bonus">+%1$d</string>
+    <string name="content_lang">Content language</string>
+    <string name="content_lang_ui">same as interface</string>
+    <string name="original">Original</string>
+    <string name="close">Close</string>
+    <string name="not_found">Entry not found: %1$s</string>
+
     <string name="error_no_connection">No connection to the server</string>
     <string name="error_server_with_id">Server error %1$d, request ID %2$s</string>
     <string name="error_too_many">Too many attempts. Try again in %1$s</string>

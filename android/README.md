@@ -33,6 +33,10 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew testDebugUnitTest
 
 Тексты — `res/values/strings.xml` (русский, по умолчанию) и `res/values-en/strings.xml`; `StringsTest` падает, если перевод неполный. Язык — системный; на Android 13+ его можно выбрать для приложения в настройках системы.
 
+## Контент
+
+`content/` — модели пакета и листа (kotlinx.serialization), правило выбора языка, язык контента (отдельно от интерфейса, DataStore). Markdown — [multiplatform-markdown-renderer](https://github.com/mikepenz/multiplatform-markdown-renderer); ссылки `dataslate:` открываются внутри приложения. Демо-анкета — только в debug: `schemas/examples` подключены как assets debug-сборки.
+
 ## Авторизация
 
 - `api/` — клиент API; модели — по `schemas/openapi.yaml`. HTTP-ответ с ошибкой — значение `ApiResult.Failure` с кодом из тела, исключение сети — `ApiResult.Offline`.

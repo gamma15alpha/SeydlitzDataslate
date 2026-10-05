@@ -28,6 +28,22 @@
     <string name="android_app">Android-приложение</string>
     <string name="unknown_device">Неизвестное устройство</string>
 
+    <string name="demo_link">Демо-анкета</string>
+    <string name="demo_title">Демо-анкета</string>
+    <string name="player">Игрок</string>
+    <string name="homeworld">Родной мир</string>
+    <string name="career">Карьера</string>
+    <string name="rank">Ранг</string>
+    <string name="characteristics">Характеристики</string>
+    <string name="skills">Навыки</string>
+    <string name="trained">обучен</string>
+    <string name="training_bonus">+%1$d</string>
+    <string name="content_lang">Язык контента</string>
+    <string name="content_lang_ui">как интерфейс</string>
+    <string name="original">Оригинал</string>
+    <string name="close">Закрыть</string>
+    <string name="not_found">Запись не найдена: %1$s</string>
+
     <string name="error_no_connection">Нет связи с сервером</string>
     <string name="error_server_with_id">Ошибка сервера %1$d, код запроса %2$s</string>
     <string name="error_too_many">Слишком много попыток. Повторите через %1$s</string>
