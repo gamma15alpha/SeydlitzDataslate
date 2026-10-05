@@ -1,8 +1,10 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,13 +23,28 @@ const (
 	sessionTTL    = 30 * 24 * time.Hour
 	// Продлеваем, только когда осталось меньше, — не пишем в базу на каждый запрос.
 	sessionRefresh = 15 * 24 * time.Hour
+	// Абсолютный предел от входа (OWASP): дальше продления нет.
+	sessionMaxAge      = 90 * 24 * time.Hour
+	sessionRotateEvery = 24 * time.Hour
+	rotationGrace      = time.Minute
+	sessionTouchEvery  = time.Hour
 )
+
+// RFC 9110 / RFC 6750: 401 обязан содержать вызов WWW-Authenticate.
+func unauthorized(w http.ResponseWriter, code, msg string, invalidToken bool) {
+	challenge := `Bearer realm="dataslate"`
+	if invalidToken {
+		challenge += `, error="invalid_token"`
+	}
+	w.Header().Set("WWW-Authenticate", challenge)
+	writeError(w, http.StatusUnauthorized, code, msg)
+}
 
 type sessionKey struct{}
 
 type session struct {
-	user      dbq.User
-	tokenHash []byte
+	user dbq.User
+	id   uuid.UUID
 }
 
 func currentSession(r *http.Request) *session {
@@ -86,38 +103,110 @@ func (s *server) requireUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, fromCookie := sessionToken(r)
 		if token == "" {
-			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
+			unauthorized(w, "unauthorized", "authentication required", false)
 			return
 		}
-		hash := auth.HashSecret(token)
-		row, err := s.q.GetSessionUser(r.Context(), hash)
+		ctx := r.Context()
+		now := time.Now()
+		row, err := s.q.FindSession(ctx, dbq.FindSessionParams{TokenHash: auth.HashSecret(token), CreatedAfter: now.Add(-sessionMaxAge)})
 		if errors.Is(err, pgx.ErrNoRows) {
 			if fromCookie {
 				clearSessionCookie(w)
 			}
-			writeError(w, http.StatusUnauthorized, "unauthorized", "session expired or invalid")
+			unauthorized(w, "unauthorized", "session expired or invalid", true)
 			return
 		}
 		if err != nil {
 			internalError(w, r, err)
 			return
 		}
-		if time.Until(row.SessionExpiresAt) < sessionRefresh {
-			err := s.q.ExtendSession(r.Context(), dbq.ExtendSessionParams{TokenHash: hash, ExpiresAt: time.Now().Add(sessionTTL)})
-			if err != nil {
+		if info := logging.Request(ctx); info != nil {
+			info.UserID = row.User.ID.String()
+		}
+
+		newToken, err := s.rotate(ctx, row, token, now)
+		if errors.Is(err, errTokenReuse) {
+			slog.WarnContext(ctx, "session token reuse, session revoked", "session_id", row.SessionID)
+			if fromCookie {
+				clearSessionCookie(w)
+			}
+			unauthorized(w, "session_revoked", "session revoked: token reuse detected", true)
+			return
+		}
+		if err != nil {
+			internalError(w, r, err)
+			return
+		}
+
+		expires := now.Add(sessionTTL)
+		if limit := row.SessionCreatedAt.Add(sessionMaxAge); expires.After(limit) {
+			expires = limit
+		}
+		extend := row.SessionExpiresAt.Sub(now) < sessionRefresh && expires.After(row.SessionExpiresAt)
+		if !extend {
+			expires = row.SessionExpiresAt
+		}
+		if extend || now.Sub(row.LastUsedAt) >= sessionTouchEvery {
+			if err := s.q.TouchSession(ctx, dbq.TouchSessionParams{ID: row.SessionID, ExpiresAt: expires}); err != nil {
 				internalError(w, r, err)
 				return
 			}
-			if fromCookie {
-				setSessionCookie(w, token, sessionTTL)
-			}
 		}
-		if info := logging.Request(r.Context()); info != nil {
-			info.UserID = row.User.ID.String()
+
+		switch {
+		case fromCookie && (newToken != "" || extend):
+			setSessionCookie(w, cmp.Or(newToken, token), expires.Sub(now))
+		case !fromCookie && newToken != "":
+			// Только Bearer-клиентам: веб-токен не должен попадать в JS.
+			w.Header().Set("X-Session-Token", newToken)
 		}
-		ctx := context.WithValue(r.Context(), sessionKey{}, &session{user: row.User, tokenHash: hash})
+		ctx = context.WithValue(ctx, sessionKey{}, &session{user: row.User, id: row.SessionID})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+var errTokenReuse = errors.New("session token reuse")
+
+// rotate раз в сутки выдаёт новый токен. Старый принимается, пока новый не пришёл ни разу
+// (ответ мог потеряться), и ещё rotationGrace после — для параллельных запросов.
+// Старый токен позже — его использует кто-то ещё: сессия отзывается.
+func (s *server) rotate(ctx context.Context, row dbq.FindSessionRow, token string, now time.Time) (string, error) {
+	newToken, newHash := auth.NewSecret()
+	hash := auth.HashSecret(token)
+	if row.IsCurrent {
+		if row.ConfirmedAt == nil {
+			if err := s.q.ConfirmSession(ctx, row.SessionID); err != nil {
+				return "", err
+			}
+		}
+		if now.Sub(row.RotatedAt) < sessionRotateEvery {
+			return "", nil
+		}
+		n, err := s.q.RotateSession(ctx, dbq.RotateSessionParams{ID: row.SessionID, NewHash: newHash, CurrentHash: hash})
+		return issued(newToken, n, err)
+	}
+	switch {
+	case row.ConfirmedAt == nil:
+		n, err := s.q.ReissueSession(ctx, dbq.ReissueSessionParams{
+			ID: row.SessionID, NewHash: newHash, PrevHash: hash, ReissueBefore: now.Add(-rotationGrace),
+		})
+		return issued(newToken, n, err)
+	case now.Sub(*row.ConfirmedAt) < rotationGrace:
+		return "", nil
+	default:
+		if err := s.q.DeleteSession(ctx, row.SessionID); err != nil {
+			return "", err
+		}
+		return "", errTokenReuse
+	}
+}
+
+// issued — токен выдан, только если обновление прошло (иначе его уже выдал параллельный запрос).
+func issued(token string, rows int64, err error) (string, error) {
+	if err != nil || rows == 0 {
+		return "", err
+	}
+	return token, nil
 }
 
 func requireAdmin(next http.Handler) http.Handler {

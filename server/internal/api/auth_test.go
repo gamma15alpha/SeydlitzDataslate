@@ -11,15 +11,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbtest"
 )
 
 type testAPI struct {
-	t *testing.T
-	h http.Handler
-	q *dbq.Queries
+	t    *testing.T
+	h    http.Handler
+	q    *dbq.Queries
+	pool *pgxpool.Pool
 }
 
 func newTestAPI(t *testing.T) *testAPI {
@@ -31,7 +34,7 @@ func newTestAPIWith(t *testing.T, cfg Config) *testAPI {
 	t.Helper()
 	pool := dbtest.New(t)
 	cfg.Pool = pool
-	return &testAPI{t: t, h: NewHandler(cfg), q: dbq.New(pool)}
+	return &testAPI{t: t, h: NewHandler(cfg), q: dbq.New(pool), pool: pool}
 }
 
 func (a *testAPI) do(method, path, token string, body any) *httptest.ResponseRecorder {
@@ -379,7 +382,7 @@ func TestRequestLogsAreCorrelated(t *testing.T) {
 		}
 		switch r["msg"] {
 		case "db query":
-			if r["query"] == "GetSessionUser" {
+			if r["query"] == "FindSession" {
 				sawQuery = true
 			}
 			if _, leaked := r["args"]; leaked {
@@ -392,4 +395,64 @@ func TestRequestLogsAreCorrelated(t *testing.T) {
 	if !sawQuery || !sawAccess {
 		t.Errorf("query logged: %v, access log with user_id: %v\n%s", sawQuery, sawAccess, logs)
 	}
+}
+
+func TestUnauthorizedChallenge(t *testing.T) {
+	a := newTestAPI(t)
+	a.createUser("player", "player-password", false)
+
+	cases := []struct {
+		name string
+		rec  *httptest.ResponseRecorder
+		want string
+	}{
+		{"no token", a.do(http.MethodGet, "/api/me", "", nil), `Bearer realm="dataslate"`},
+		{"bad token", a.do(http.MethodGet, "/api/me", "NOPE", nil), `Bearer realm="dataslate", error="invalid_token"`},
+		{"wrong password", a.do(http.MethodPost, "/api/auth/login", "", loginRequest{Login: "player", Password: "wrong-password"}), `Bearer realm="dataslate"`},
+	}
+	for _, c := range cases {
+		expectStatus(t, c.rec, http.StatusUnauthorized)
+		if got := c.rec.Header().Get("WWW-Authenticate"); got != c.want {
+			t.Errorf("%s: WWW-Authenticate = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+func TestSessionLifetime(t *testing.T) {
+	a := newTestAPI(t)
+	token := a.createUser("player", "player-password", false)
+	ctx := context.Background()
+	age := func(created, expires string) {
+		t.Helper()
+		_, err := a.pool.Exec(ctx, "UPDATE sessions SET created_at = now() - $1::interval, expires_at = now() + $2::interval", created, expires)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	expiresIn := func() time.Duration {
+		t.Helper()
+		var exp time.Time
+		if err := a.pool.QueryRow(ctx, "SELECT expires_at FROM sessions").Scan(&exp); err != nil {
+			t.Fatal(err)
+		}
+		return time.Until(exp)
+	}
+	const day = 24 * time.Hour
+
+	age("20 days", "5 days")
+	expectStatus(t, a.do(http.MethodGet, "/api/me", token, nil), http.StatusOK)
+	if d := expiresIn(); d < 29*day || d > 30*day {
+		t.Errorf("active session extended to %v, want 30 days", d)
+	}
+
+	age("85 days", "2 days")
+	expectStatus(t, a.do(http.MethodGet, "/api/me", token, nil), http.StatusOK)
+	if d := expiresIn(); d < 4*day || d > 5*day {
+		t.Errorf("session near the limit extended to %v, want 5 days (90 since login)", d)
+	}
+
+	age("91 days", "10 days")
+	rec := a.do(http.MethodGet, "/api/me", token, nil)
+	expectStatus(t, rec, http.StatusUnauthorized)
+	assertJSONError(t, rec, "unauthorized")
 }

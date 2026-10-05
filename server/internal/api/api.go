@@ -70,6 +70,9 @@ func NewHandler(cfg Config) http.Handler {
 			r.Use(rateLimit(cmp.Or(cfg.UserRequestsPerMinute, 300), userKey))
 			r.Post("/auth/logout", s.logout)
 			r.Get("/me", s.me)
+			r.Get("/sessions", s.listSessions)
+			r.Delete("/sessions", s.deleteOtherSessions)
+			r.Delete("/sessions/{id}", s.deleteSession)
 
 			r.Group(func(r chi.Router) {
 				r.Use(requireAdmin)

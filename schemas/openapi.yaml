@@ -7,6 +7,15 @@ info:
 
     Авторизация — токен сессии: веб получает его в HttpOnly-cookie `session`,
     Android — в теле ответа на вход и передаёт в `Authorization: Bearer …`.
+    Сессия живёт 30 дней с последнего использования, но не дольше 90 дней со входа.
+    Ответ 401 содержит `WWW-Authenticate: Bearer realm="dataslate"`
+    (с `error="invalid_token"`, если токен истёк или недействителен).
+
+    Раз в сутки токен меняется: веб получает новый в cookie, Bearer-клиент — в заголовке
+    `X-Session-Token` любого ответа и обязан сохранить его. Старый токен принимается, пока
+    новый не использован, и минуту после. Старый токен позже означает кражу: сессия
+    отзывается, ответ — `401` с кодом `session_revoked`.
+
     Запросы с телом — только `Content-Type: application/json`.
 
     У каждого ответа есть заголовок `X-Request-ID` — по нему в логах сервера находятся
@@ -189,6 +198,54 @@ paths:
         "4XX":
           $ref: "#/components/responses/Error"
 
+  /api/sessions:
+    get:
+      operationId: listSessions
+      summary: Активные сессии текущего пользователя
+      tags: [auth]
+      responses:
+        "200":
+          description: Сессии, последние использованные первыми.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionInfo"
+        "4XX":
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteOtherSessions
+      summary: Выйти на всех остальных устройствах
+      tags: [auth]
+      responses:
+        "204":
+          description: Все сессии, кроме текущей, завершены.
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/sessions/{id}:
+    delete:
+      operationId: deleteSession
+      summary: Завершить сессию
+      description: Своя сессия; текущая — то же, что выход.
+      tags: [auth]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Сессия завершена.
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
   /api/invites/{id}:
     delete:
       operationId: deleteInvite
@@ -262,6 +319,27 @@ components:
           type: string
           format: date-time
 
+    SessionInfo:
+      type: object
+      required: [id, createdAt, lastUsedAt, userAgent, current]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          description: Вход.
+        lastUsedAt:
+          type: string
+          format: date-time
+          description: С точностью до часа.
+        userAgent:
+          type: string
+        current:
+          type: boolean
+          description: Сессия этого запроса.
+
     Invite:
       type: object
       required: [id, createdAt, expiresAt]
@@ -298,7 +376,8 @@ components:
           type: string
           description: |
             Машиночитаемый код. Общие: `bad_request`, `too_large`, `unsupported_media_type`, `unauthorized`,
-            `forbidden`, `not_found`, `method_not_allowed`, `rate_limited`, `too_many_attempts`, `internal`;
+            `session_revoked`, `forbidden`, `not_found`, `method_not_allowed`, `rate_limited`,
+            `too_many_attempts`, `internal`;
             остальные — в описаниях ответов конкретных операций.
           examples: ["not_found"]
 

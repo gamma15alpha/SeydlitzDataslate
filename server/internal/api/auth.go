@@ -137,7 +137,7 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 	fail := func() {
 		s.ipLimiter.Fail(ipKey)
 		s.loginLimiter.Fail(loginKey)
-		writeError(w, http.StatusUnauthorized, "invalid_credentials", "invalid login or password")
+		unauthorized(w, "invalid_credentials", "invalid login or password", false)
 	}
 
 	ctx := r.Context()
@@ -172,7 +172,7 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) logout(w http.ResponseWriter, r *http.Request) {
-	if err := s.q.DeleteSession(r.Context(), currentSession(r).tokenHash); err != nil {
+	if err := s.q.DeleteSession(r.Context(), currentSession(r).id); err != nil {
 		internalError(w, r, err)
 		return
 	}

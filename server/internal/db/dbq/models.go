@@ -21,11 +21,16 @@ type Invite struct {
 }
 
 type Session struct {
-	TokenHash []byte
-	UserID    uuid.UUID
-	CreatedAt time.Time
-	ExpiresAt time.Time
-	UserAgent string
+	TokenHash     []byte
+	UserID        uuid.UUID
+	CreatedAt     time.Time
+	ExpiresAt     time.Time
+	UserAgent     string
+	ID            uuid.UUID
+	PrevTokenHash []byte
+	RotatedAt     time.Time
+	ConfirmedAt   *time.Time
+	LastUsedAt    time.Time
 }
 
 type User struct {

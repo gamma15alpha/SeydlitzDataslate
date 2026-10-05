@@ -26,6 +26,15 @@ func (q *Queries) ClaimInvite(ctx context.Context, codeHash []byte) (uuid.UUID, 
 	return id, err
 }
 
+const confirmSession = `-- name: ConfirmSession :exec
+UPDATE sessions SET confirmed_at = now() WHERE id = $1 AND confirmed_at IS NULL
+`
+
+func (q *Queries) ConfirmSession(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, confirmSession, id)
+	return err
+}
+
 const createInvite = `-- name: CreateInvite :one
 INSERT INTO invites (code_hash, created_by, expires_at)
 VALUES ($1, $2, $3)
@@ -117,12 +126,29 @@ func (q *Queries) DeleteExpiredSessions(ctx context.Context) (int64, error) {
 	return result.RowsAffected(), nil
 }
 
-const deleteSession = `-- name: DeleteSession :exec
-DELETE FROM sessions WHERE token_hash = $1
+const deleteOtherSessions = `-- name: DeleteOtherSessions :execrows
+DELETE FROM sessions WHERE user_id = $1 AND id <> $2
 `
 
-func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
-	_, err := q.db.Exec(ctx, deleteSession, tokenHash)
+type DeleteOtherSessionsParams struct {
+	UserID uuid.UUID
+	KeepID uuid.UUID
+}
+
+func (q *Queries) DeleteOtherSessions(ctx context.Context, arg DeleteOtherSessionsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteOtherSessions, arg.UserID, arg.KeepID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions WHERE id = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSession, id)
 	return err
 }
 
@@ -139,35 +165,57 @@ func (q *Queries) DeleteUnusedInvite(ctx context.Context, id uuid.UUID) (int64, 
 	return result.RowsAffected(), nil
 }
 
-const extendSession = `-- name: ExtendSession :exec
-UPDATE sessions SET expires_at = $2 WHERE token_hash = $1
+const deleteUserSession = `-- name: DeleteUserSession :execrows
+DELETE FROM sessions WHERE id = $1 AND user_id = $2
 `
 
-type ExtendSessionParams struct {
-	TokenHash []byte
-	ExpiresAt time.Time
+type DeleteUserSessionParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
 }
 
-func (q *Queries) ExtendSession(ctx context.Context, arg ExtendSessionParams) error {
-	_, err := q.db.Exec(ctx, extendSession, arg.TokenHash, arg.ExpiresAt)
-	return err
+func (q *Queries) DeleteUserSession(ctx context.Context, arg DeleteUserSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUserSession, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const getSessionUser = `-- name: GetSessionUser :one
-SELECT users.id, users.login, users.display_name, users.password_hash, users.is_admin, users.created_at, sessions.expires_at AS session_expires_at
+const findSession = `-- name: FindSession :one
+SELECT users.id, users.login, users.display_name, users.password_hash, users.is_admin, users.created_at,
+       sessions.id AS session_id,
+       sessions.created_at AS session_created_at,
+       sessions.expires_at AS session_expires_at,
+       sessions.rotated_at,
+       sessions.confirmed_at,
+       sessions.last_used_at,
+       sessions.token_hash = $1 AS is_current
 FROM sessions
 JOIN users ON users.id = sessions.user_id
-WHERE sessions.token_hash = $1 AND sessions.expires_at > now()
+WHERE (sessions.token_hash = $1 OR sessions.prev_token_hash = $1)
+  AND sessions.expires_at > now() AND sessions.created_at > $2
 `
 
-type GetSessionUserRow struct {
-	User             User
-	SessionExpiresAt time.Time
+type FindSessionParams struct {
+	TokenHash    []byte
+	CreatedAfter time.Time
 }
 
-func (q *Queries) GetSessionUser(ctx context.Context, tokenHash []byte) (GetSessionUserRow, error) {
-	row := q.db.QueryRow(ctx, getSessionUser, tokenHash)
-	var i GetSessionUserRow
+type FindSessionRow struct {
+	User             User
+	SessionID        uuid.UUID
+	SessionCreatedAt time.Time
+	SessionExpiresAt time.Time
+	RotatedAt        time.Time
+	ConfirmedAt      *time.Time
+	LastUsedAt       time.Time
+	IsCurrent        bool
+}
+
+func (q *Queries) FindSession(ctx context.Context, arg FindSessionParams) (FindSessionRow, error) {
+	row := q.db.QueryRow(ctx, findSession, arg.TokenHash, arg.CreatedAfter)
+	var i FindSessionRow
 	err := row.Scan(
 		&i.User.ID,
 		&i.User.Login,
@@ -175,7 +223,13 @@ func (q *Queries) GetSessionUser(ctx context.Context, tokenHash []byte) (GetSess
 		&i.User.PasswordHash,
 		&i.User.IsAdmin,
 		&i.User.CreatedAt,
+		&i.SessionID,
+		&i.SessionCreatedAt,
 		&i.SessionExpiresAt,
+		&i.RotatedAt,
+		&i.ConfirmedAt,
+		&i.LastUsedAt,
+		&i.IsCurrent,
 	)
 	return i, err
 }
@@ -239,6 +293,97 @@ func (q *Queries) ListInvites(ctx context.Context) ([]ListInvitesRow, error) {
 	return items, nil
 }
 
+const listUserSessions = `-- name: ListUserSessions :many
+SELECT id, created_at, last_used_at, user_agent
+FROM sessions
+WHERE user_id = $1 AND expires_at > now() AND created_at > $2
+ORDER BY last_used_at DESC
+`
+
+type ListUserSessionsParams struct {
+	UserID       uuid.UUID
+	CreatedAfter time.Time
+}
+
+type ListUserSessionsRow struct {
+	ID         uuid.UUID
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+	UserAgent  string
+}
+
+func (q *Queries) ListUserSessions(ctx context.Context, arg ListUserSessionsParams) ([]ListUserSessionsRow, error) {
+	rows, err := q.db.Query(ctx, listUserSessions, arg.UserID, arg.CreatedAfter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUserSessionsRow
+	for rows.Next() {
+		var i ListUserSessionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.LastUsedAt,
+			&i.UserAgent,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const reissueSession = `-- name: ReissueSession :execrows
+UPDATE sessions SET token_hash = $1, rotated_at = now()
+WHERE id = $2 AND prev_token_hash = $3 AND confirmed_at IS NULL AND rotated_at < $4
+`
+
+type ReissueSessionParams struct {
+	NewHash       []byte
+	ID            uuid.UUID
+	PrevHash      []byte
+	ReissueBefore time.Time
+}
+
+// Ответ с новым токеном потерялся: клиент пришёл со старым — выдаём ещё один.
+func (q *Queries) ReissueSession(ctx context.Context, arg ReissueSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, reissueSession,
+		arg.NewHash,
+		arg.ID,
+		arg.PrevHash,
+		arg.ReissueBefore,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const rotateSession = `-- name: RotateSession :execrows
+UPDATE sessions
+SET prev_token_hash = token_hash, token_hash = $1, rotated_at = now(), confirmed_at = NULL
+WHERE id = $2 AND token_hash = $3
+`
+
+type RotateSessionParams struct {
+	NewHash     []byte
+	ID          uuid.UUID
+	CurrentHash []byte
+}
+
+// Условие на token_hash: из параллельных запросов ротирует один.
+func (q *Queries) RotateSession(ctx context.Context, arg RotateSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, rotateSession, arg.NewHash, arg.ID, arg.CurrentHash)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const setInviteUser = `-- name: SetInviteUser :exec
 UPDATE invites SET used_by = $2 WHERE id = $1
 `
@@ -250,5 +395,19 @@ type SetInviteUserParams struct {
 
 func (q *Queries) SetInviteUser(ctx context.Context, arg SetInviteUserParams) error {
 	_, err := q.db.Exec(ctx, setInviteUser, arg.ID, arg.UsedBy)
+	return err
+}
+
+const touchSession = `-- name: TouchSession :exec
+UPDATE sessions SET last_used_at = now(), expires_at = $1 WHERE id = $2
+`
+
+type TouchSessionParams struct {
+	ExpiresAt time.Time
+	ID        uuid.UUID
+}
+
+func (q *Queries) TouchSession(ctx context.Context, arg TouchSessionParams) error {
+	_, err := q.db.Exec(ctx, touchSession, arg.ExpiresAt, arg.ID)
 	return err
 }
