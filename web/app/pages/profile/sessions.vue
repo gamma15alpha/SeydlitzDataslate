@@ -3,8 +3,8 @@ import type { components } from '~/api/schema'
 import { api } from '~/api/client'
 
 type SessionInfo = components['schemas']['SessionInfo']
+definePageMeta({ titleKey: 'nav.sessions' })
 const { t, locale } = useI18n()
-useHead({ title: () => t('sessions.title') })
 
 const sessions = ref<SessionInfo[]>([])
 const error = ref<string | null>(null)
@@ -50,8 +50,7 @@ onMounted(() => load())
 </script>
 
 <template>
-  <main class="page">
-    <h1>{{ t('sessions.title') }}</h1>
+  <div class="page">
     <ul>
       <li v-for="s in sessions" :key="s.id" class="panel">
         <div>
@@ -66,17 +65,12 @@ onMounted(() => load())
     </ul>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <button v-if="sessions.length > 1" type="button" :disabled="busy" @click="endOthers">{{ t('sessions.endOthers') }}</button>
-    <NuxtLink to="/">{{ t('sessions.back') }}</NuxtLink>
-  </main>
+  </div>
 </template>
 
 <style scoped>
 .page {
   gap: 16px;
-}
-
-h1 {
-  margin: 0;
 }
 
 ul {

@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import pack from '../../../schemas/examples/dh1-mock.content.json'
-import character from '../../../schemas/examples/dh1.character.json'
-
+// Лист DH1: шапка, характеристики, навыки; термины открывают справки. Пока — только просмотр демо-анкеты.
+const props = defineProps<{ character: Character }>()
 const { t } = useI18n()
-useHead({ title: () => t('demo.title') })
-const { setting, setContentLang } = useContentLocale()
 
-const content = pack.content as Dh1Content
-const sheet = character.sheet as Dh1Sheet
+const content = demoContent
+const sheet = props.character.sheet as Dh1Sheet
 const CHARACTERISTICS = ['ws', 'bs', 's', 't', 'ag', 'int', 'per', 'wp', 'fel']
 
 function choice(section: string, value?: Choice) {
@@ -87,18 +84,8 @@ function navigate(ref: string, from?: RefWindow) {
 
 <template>
   <div class="demo" :class="{ 'with-article': !desktop && opened.length }">
-    <main>
-      <h1>{{ t('demo.title') }}</h1>
-      <label class="content-lang">
-        {{ t('demo.contentLang') }}
-        <select :value="setting" @change="setContentLang(($event.target as HTMLSelectElement).value as ContentLang)">
-          <option value="ui">{{ t('demo.contentLangUi') }}</option>
-          <option value="ru">Русский</option>
-          <option value="en">English</option>
-        </select>
-      </label>
-
-      <h2>{{ character.name }}</h2>
+    <div>
+      <p class="muted">{{ t('demo.title') }}</p>
       <dl>
         <dt>{{ t('demo.player') }}</dt>
         <dd>{{ sheet.player }}</dd>
@@ -129,7 +116,7 @@ function navigate(ref: string, from?: RefWindow) {
         </li>
       </ul>
       <p v-if="notFound" class="warning">{{ t('demo.notFound', { ref: notFound }) }}</p>
-    </main>
+    </div>
 
     <ContentArticle
       v-if="!desktop && opened.length"
@@ -183,13 +170,6 @@ h1,
 h2,
 h3 {
   margin: 0 0 12px;
-}
-
-.content-lang {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 24px;
 }
 
 dl {

@@ -21,22 +21,22 @@
     "haveAccount": "Already have an account?",
     "offline": "No connection to the server — working offline",
     "logout": "Sign out",
-    "revoked": "Session ended: it was used from another device. Sign in again and check your active sessions."
+    "revoked": "Session ended: it was used from another device. Sign in again and check your active sessions.",
+    "show": "show",
+    "hide": "hide",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "sessions": {
-    "link": "Active sessions",
-    "title": "Sessions",
     "thisDevice": "— this device",
     "dates": "signed in {created} · active {used}",
     "end": "End",
     "endOthers": "Sign out on all other devices",
-    "back": "Back",
     "loadFailed": "Could not load sessions",
     "androidApp": "Android app",
     "unknownDevice": "Unknown device"
   },
   "demo": {
-    "link": "Demo sheet",
     "title": "Demo sheet",
     "player": "Player",
     "homeworld": "Home world",
@@ -65,7 +65,9 @@
     "login_taken": "This login is already taken",
     "invalid_login": "Login: 3 to 32 characters — Latin letters, digits, “_”, “.”, “-”",
     "invalid_password": "Password: 8 to 128 characters",
-    "invalid_display_name": "Name: at most 64 characters"
+    "invalid_display_name": "Name: at most 64 characters",
+    "wrong_password": "Current password is incorrect",
+    "invalid_expiry": "Validity must be 1 to 90 days"
   },
   "casing": {
     "ready": "Machine spirit: content",
@@ -75,5 +77,74 @@
     "scanlines": "Scanlines",
     "serverDown": "Server not responding: working offline",
     "connecting": "Establishing vox link…"
+  },
+  "nav": {
+    "sheet": "Sheet",
+    "reference": "Codex",
+    "profile": "Profile",
+    "settings": "Settings",
+    "sessions": "Sessions",
+    "back": "Back",
+    "breadcrumbs": "Breadcrumbs",
+    "sections": "Sections",
+    "sheets": "Sheets",
+    "changeLogin": "Change login",
+    "changePassword": "Change password",
+    "invites": "Invites"
+  },
+  "profile": {
+    "admin": "administrator",
+    "newLogin": "New login",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changeLoginSubmit": "Change login",
+    "changePasswordSubmit": "Change password",
+    "changeLoginHint": "You will sign in with the new login. Sessions on other devices stay active.",
+    "changePasswordHint": "Changing the password ends all other sessions — other devices will need to sign in again.",
+    "loginChanged": "Login changed: {login}",
+    "passwordChanged": "Password changed. Other sessions have been ended."
+  },
+  "settings": {
+    "screen": "Screen",
+    "screenTabs": "Section tabs on screen",
+    "screenTabsHint": "On a large screen, sections are also switched with the keys on the left column of the casing — without on-screen tabs there is more room. Where the casing has no keys (narrow window, phone), tabs are always shown.",
+    "content": "Content"
+  },
+  "reference": {
+    "placeholder": "The content catalogue will live here: characteristics, skills, careers, rules. For now, reference entries open from a sheet."
+  },
+  "invites": {
+    "adminOnly": "Only an administrator can create invites.",
+    "expiresIn": "Valid for",
+    "create": "Create invite",
+    "days": {
+      "one": "{n} day",
+      "other": "{n} days"
+    },
+    "showOnce": "The code is shown only once — copy it now. The server keeps only its hash.",
+    "code": "Code",
+    "link": "Registration link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy — select and copy it manually.",
+    "none": "No invites yet.",
+    "status": {
+      "active": "Active",
+      "used": "Used",
+      "expired": "Expired"
+    },
+    "deletedUser": "user deleted",
+    "dates": "created {created} · valid until {expires}",
+    "revoke": "Revoke"
+  },
+  "sheets": {
+    "create": "New sheet",
+    "import": "Import from file",
+    "soon": "Creating and importing sheets comes in the next slices.",
+    "empty": "No sheets yet.",
+    "player": "player: {player}",
+    "updated": "updated {date}",
+    "notFound": "Sheet not found.",
+    "toList": "Back to sheets"
   }
 }

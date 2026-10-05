@@ -5,6 +5,8 @@ useHead({ htmlAttrs: { lang: locale }, titleTemplate: page => (page ? t('app.pag
 
 <template>
   <DataslateCasing>
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </DataslateCasing>
 </template>

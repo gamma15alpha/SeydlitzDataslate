@@ -119,7 +119,7 @@ html[data-phosphor='white'] {
 }
 
 /* Поля ввода — как TextBox Fluent в палитре люминофора */
-:where(.screen-content) :is(input, select, textarea) {
+:where(.screen-content) :is(input, textarea) {
   font: inherit;
   color: inherit;
   text-shadow: inherit;
@@ -130,19 +130,69 @@ html[data-phosphor='white'] {
   padding: 6px 10px;
 }
 
-:where(.screen-content) :is(input, select, textarea):hover {
+:where(.screen-content) :is(input, textarea):hover {
   border-color: var(--phosphor-dim);
 }
 
-:where(.screen-content) :is(input, select, textarea):focus-visible {
+:where(.screen-content) :is(input, textarea):focus-visible {
   outline: none;
   border-color: var(--phosphor-dim);
   border-bottom: 2px solid var(--phosphor);
   padding-bottom: 5px;
 }
 
-:where(.screen-content) option {
-  background: var(--screen);
+/* Флажок: квадрат с рамкой, отмеченный — залит люминофором */
+:where(.screen-content) label.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+:where(.screen-content) input[type='checkbox'] {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--phosphor-dim);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+:where(.screen-content) input[type='checkbox']::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--phosphor);
+  box-shadow: 0 0 6px var(--phosphor-glow);
+  transform: scale(0);
+}
+
+:where(.screen-content) input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+
+:where(.screen-content) input[type='checkbox']:focus-visible {
+  outline: 1px solid var(--phosphor);
+  outline-offset: 2px;
+  border: 1px solid var(--phosphor);
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  :where(.screen-content) input[type='checkbox'] {
+    width: 24px;
+    height: 24px;
+    min-height: 0;
+  }
+
+  :where(.screen-content) label.check {
+    min-height: 44px;
+  }
 }
 
 /* Кнопки терминала: Button.terminal */
@@ -207,7 +257,7 @@ html.window-resizing * {
 
 /* Сенсорные экраны: зона нажатия не меньше 44px. */
 @media (pointer: coarse) {
-  :where(.screen-content) :is(button, input, select) {
+  :where(.screen-content) :is(button, input) {
     min-height: 44px;
   }
 

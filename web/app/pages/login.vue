@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ public: true })
+definePageMeta({ public: true, layout: 'auth' })
 const { t } = useI18n()
 useHead({ title: () => t('auth.loginTitle') })
 
@@ -26,7 +26,7 @@ async function submit() {
     </label>
     <label>
       {{ t('auth.password') }}
-      <input v-model="form.password" type="password" name="password" autocomplete="current-password" required>
+      <PasswordInput v-model="form.password" name="password" autocomplete="current-password" required />
     </label>
     <template #footer>
       {{ t('auth.loginFooter') }}

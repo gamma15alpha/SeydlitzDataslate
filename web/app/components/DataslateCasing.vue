@@ -1,9 +1,11 @@
 <script setup lang="ts">
-// Корпус датаслейта вокруг экрана (D10–D12): табличка, лампы, ручка PHOSPHOR, кнопка SCAN, ЖК-статус,
-// ползунок языка LANG. Стили — assets/css/casing.css; приложение — в слоте, на экране.
+// Корпус датаслейта вокруг экрана (D10–D12): табличка, лампы, кнопки разделов (D61), ручка PHOSPHOR,
+// кнопка SCAN, ЖК-статус, ползунок языка LANG. Стили — assets/css/casing.css; приложение — в слоте, на экране.
 const { t, locale, locales, setLocale } = useI18n()
 const { phosphor, scanlines, busy, fault, setPhosphor, toggleScanlines } = useCasing()
 const { state: link } = useServerLink()
+const auth = useAuth()
+const { section } = useNavigation()
 
 const index = computed(() => PHOSPHORS.findIndex(p => p.name === phosphor.value))
 const position = computed(() => PHOSPHORS[index.value]!)
@@ -176,17 +178,31 @@ const status = computed(() => {
       <span class="screw" style="--r: -34deg" aria-hidden="true" />
     </header>
 
-    <!-- Левая стойка: кабельные трубы и вентиляция -->
-    <aside class="column column-left" aria-hidden="true">
-      <span class="screw" style="--r: 62deg" />
-      <div class="conduits">
+    <!-- Левая стойка: клавиши разделов, кабельные трубы и вентиляция -->
+    <aside class="column column-left">
+      <span class="screw" style="--r: 62deg" aria-hidden="true" />
+      <!-- Те же разделы, что вкладки на экране; без входа — неактивны -->
+      <nav class="section-keys" :aria-label="t('nav.sections')">
+        <div v-for="s in SECTIONS" :key="s.key" class="control">
+          <button
+            class="section-key" :class="{ active: section?.key === s.key }" type="button"
+            :disabled="!auth.user.value" :aria-label="t(s.titleKey)"
+            :aria-current="section?.key === s.key ? 'page' : undefined"
+            @click="navigateTo(s.path)"
+          >
+            <span class="section-key-led" aria-hidden="true" />
+          </button>
+          <span class="stencil" aria-hidden="true">{{ s.stencil }}</span>
+        </div>
+      </nav>
+      <div class="conduits" aria-hidden="true">
         <span class="conduit" />
         <span class="conduit conduit-thin" />
         <span class="clamp" style="top: 14%" />
         <span class="clamp" style="top: 58%" />
       </div>
-      <span class="vents" />
-      <span class="screw" style="--r: -8deg" />
+      <span class="vents" aria-hidden="true" />
+      <span class="screw" style="--r: -8deg" aria-hidden="true" />
     </aside>
 
     <!-- Экран в рамке -->

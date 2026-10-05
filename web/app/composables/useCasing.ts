@@ -11,26 +11,9 @@ export const PHOSPHORS: { name: Phosphor; mark: string; label: string; color: st
 const PHOSPHOR_KEY = 'seydlitz.phosphor'
 const SCANLINES_KEY = 'seydlitz.scanlines'
 
-// localStorage может быть недоступен (приватный режим) — тогда выбор просто не запоминается.
-function read(key: string) {
-  try {
-    return localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function write(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // не запоминаем
-  }
-}
-
 export function useCasing() {
-  const phosphor = useState<Phosphor>('casing:phosphor', () => PHOSPHORS.find(p => p.name === read(PHOSPHOR_KEY))?.name ?? 'green')
-  const scanlines = useState('casing:scanlines', () => read(SCANLINES_KEY) !== 'off')
+  const phosphor = useState<Phosphor>('casing:phosphor', () => PHOSPHORS.find(p => p.name === readSetting(PHOSPHOR_KEY))?.name ?? 'green')
+  const scanlines = useState('casing:scanlines', () => readSetting(SCANLINES_KEY) !== 'off')
   const navigating = useState('casing:navigating', () => false)
   const requests = useState('casing:requests', () => 0)
   const busy = computed(() => navigating.value || requests.value > 0)
@@ -38,12 +21,12 @@ export function useCasing() {
 
   function setPhosphor(value: Phosphor) {
     phosphor.value = value
-    write(PHOSPHOR_KEY, value)
+    writeSetting(PHOSPHOR_KEY, value)
   }
 
   function toggleScanlines() {
     scanlines.value = !scanlines.value
-    write(SCANLINES_KEY, scanlines.value ? 'on' : 'off')
+    writeSetting(SCANLINES_KEY, scanlines.value ? 'on' : 'off')
   }
 
   return { phosphor, scanlines, navigating, requests, busy, fault, setPhosphor, toggleScanlines }

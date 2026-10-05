@@ -94,12 +94,16 @@ export function useAuth() {
     return null
   }
 
-  return { user, offline, ready, notice, restore, refresh, login, register, logout, forget: () => setUser(null) }
+  return { user, offline, ready, notice, restore, refresh, login, register, logout, updateUser: setUser, forget: () => setUser(null) }
 }
 
-const knownCodes = new Set(['invalid_credentials', 'invalid_invite', 'login_taken', 'invalid_login', 'invalid_password', 'invalid_display_name'])
+const knownCodes = new Set([
+  'invalid_credentials', 'invalid_invite', 'login_taken', 'invalid_login', 'invalid_password', 'invalid_display_name',
+  'wrong_password', 'invalid_expiry',
+])
 
-function errorMessage(t: Translate, error: ApiError | undefined, response: Response) {
+// Текст ошибки ответа API для человека: известный код — перевод, лимит — когда повторить, прочее — статус и ID запроса.
+export function errorMessage(t: Translate, error: ApiError | undefined, response: Response) {
   const code = error?.code ?? ''
   if (code === 'too_many_attempts' || code === 'rate_limited') {
     const seconds = Number(response.headers.get('Retry-After')) || 60

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ public: true })
+definePageMeta({ public: true, layout: 'auth' })
 const { t } = useI18n()
 useHead({ title: () => t('auth.registerTitle') })
 
@@ -53,11 +53,11 @@ async function submit() {
     </label>
     <label>
       {{ t('auth.password') }}
-      <input v-model="form.password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+      <PasswordInput v-model="form.password" autocomplete="new-password" required minlength="8" maxlength="128" />
     </label>
     <label>
       {{ t('auth.passwordRepeat') }}
-      <input v-model="form.repeat" type="password" autocomplete="new-password" required>
+      <PasswordInput v-model="form.repeat" autocomplete="new-password" required />
     </label>
     <template #footer>
       {{ t('auth.haveAccount') }} <NuxtLink to="/login">{{ t('auth.loginSubmit') }}</NuxtLink>
