@@ -1,7 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
+
+// Адрес API: -Pdataslate.apiUrl=… или в gradle.properties. Debug по умолчанию — компьютер разработчика из эмулятора.
+val apiUrl = providers.gradleProperty("dataslate.apiUrl")
 
 android {
     namespace = "space.seydlitz.dataslate"
@@ -22,9 +26,11 @@ android {
             // Отладочная сборка ставится рядом с рабочей и не трогает её данные
             applicationIdSuffix = ".debug"
             resValue("string", "app_name", "Dataslate (debug)")
+            buildConfigField("String", "API_URL", "\"${apiUrl.getOrElse("http://10.0.2.2:8090/")}\"")
         }
         release {
             resValue("string", "app_name", "Seydlitz Dataslate")
+            buildConfigField("String", "API_URL", "\"${apiUrl.getOrElse("")}\"")
             isMinifyEnabled = false
         }
     }
@@ -32,6 +38,7 @@ android {
     buildFeatures {
         compose = true
         resValues = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -47,5 +54,21 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.kotlinx.coroutines.test)
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst { require(apiUrl.isPresent) { "Release: задайте адрес сервера, -Pdataslate.apiUrl=https://…" } }
 }
