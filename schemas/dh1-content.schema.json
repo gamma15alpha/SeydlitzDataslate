@@ -2,27 +2,74 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seydlitz-dataslate/schemas/dh1-content.schema.json",
   "title": "Dark Heresy 1e content",
-  "description": "Содержимое пакета контента DH1.",
+  "description": "Содержимое пакета контента DH1. Записи каталогов — catalogEntry: id + localizedText.",
   "type": "object",
   "properties": {
+    "characteristics": {
+      "type": "array",
+      "items": {
+        "$ref": "content.schema.json#/$defs/catalogEntry",
+        "properties": {
+          "id": {
+            "enum": [
+              "ws",
+              "bs",
+              "s",
+              "t",
+              "ag",
+              "int",
+              "per",
+              "wp",
+              "fel"
+            ]
+          }
+        }
+      }
+    },
+    "rules": {
+      "description": "Механики и справочный материал; текст — description.",
+      "type": "array",
+      "items": {
+        "$ref": "content.schema.json#/$defs/catalogEntry"
+      }
+    },
+    "items": {
+      "description": "Предметы; характеристики предметов — позже, пока текст в description.",
+      "type": "array",
+      "items": {
+        "$ref": "content.schema.json#/$defs/catalogEntry"
+      }
+    },
+    "homeworlds": {
+      "type": "array",
+      "items": {
+        "$ref": "content.schema.json#/$defs/catalogEntry"
+      }
+    },
+    "careers": {
+      "type": "array",
+      "items": {
+        "$ref": "content.schema.json#/$defs/catalogEntry",
+        "properties": {
+          "ranks": {
+            "description": "Ранги карьеры по порядку.",
+            "type": "array",
+            "items": {
+              "$ref": "content.schema.json#/$defs/catalogEntry"
+            }
+          }
+        }
+      }
+    },
     "skills": {
       "type": "array",
       "items": {
-        "type": "object",
+        "$ref": "content.schema.json#/$defs/catalogEntry",
         "required": [
-          "id",
-          "name",
           "characteristic",
           "kind"
         ],
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "Стабильный идентификатор; на него ссылается лист персонажа."
-          },
-          "name": {
-            "$ref": "content.schema.json#/$defs/localizedText"
-          },
           "characteristic": {
             "enum": [
               "ws",
@@ -47,6 +94,13 @@
             "type": "boolean",
             "default": false,
             "description": "Навык берётся по специализациям."
+          },
+          "specializationOptions": {
+            "description": "Известные специализации; игрок может ввести и свою.",
+            "type": "array",
+            "items": {
+              "$ref": "content.schema.json#/$defs/catalogEntry"
+            }
           }
         }
       }

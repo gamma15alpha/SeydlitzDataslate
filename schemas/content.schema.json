@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seydlitz-dataslate/schemas/content.schema.json",
   "title": "Seydlitz Dataslate content pack",
-  "description": "Пакет контента игровой системы: конверт платформы + содержимое системы. Настоящий контент в репозиторий не коммитится — только мок-пакеты.",
+  "description": "Пакет контента игровой системы: конверт платформы + содержимое системы. Название записи — localizedText; клиент показывает его на языке контента и, если тот не английский, дублирует английским (Ag · Ловкость · Agility). Описания и справочный материал — localizedMarkdown. Пакет с картинками — ZIP-архив (.dataslate): content.json + assets/. Настоящий контент в репозиторий не коммитится — только мок-пакеты.",
   "type": "object",
   "required": [
     "format",
@@ -30,7 +30,7 @@
       "description": "Ревизия пакета: растёт при каждом изменении контента."
     },
     "name": {
-      "type": "string"
+      "$ref": "#/$defs/localizedText"
     },
     "mock": {
       "type": "boolean",
@@ -61,19 +61,55 @@
   ],
   "$defs": {
     "localizedText": {
-      "description": "Строка (русский) или переводы по двухбуквенному коду языка.",
+      "description": "Строка — текст на русском (язык оригинала) — или переводы по тегу языка BCP 47 (ru, en, en-GB). Выбор перевода: язык контента (настройка пользователя, по умолчанию — язык интерфейса; может отличаться от него), затем его основной язык (en-GB → en), затем ru, затем en, затем первый по порядку.",
       "oneOf": [
         {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         {
           "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+          },
           "additionalProperties": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "minProperties": 1
         }
       ]
+    },
+    "localizedMarkdown": {
+      "description": "Как localizedText, но значение — Markdown: CommonMark + таблицы GFM, без сырого HTML. Ссылки на другие записи — dataslate:<раздел>/<id> (dataslate:skills/dodge). Картинки — пути внутри пакета (assets/cover.png); у каждого языка могут быть свои.",
+      "$ref": "#/$defs/localizedText"
+    },
+    "id": {
+      "description": "Стабильный идентификатор записи каталога; на него ссылается лист персонажа. Не меняется между ревизиями пакета.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "catalogEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "abbreviation": {
+          "description": "Короткое обозначение термина (Ag, WS).",
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedMarkdown"
+        }
+      }
     }
   }
 }

@@ -1,21 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seydlitz-dataslate/schemas/dh1-sheet.schema.json",
-  "title": "Dark Heresy 1e sheet (sheetVersion 3)",
-  "description": "Лист Dark Heresy 1e. Отсутствующие поля читаются как пустые / по умолчанию. v1: только player, homeworld, career, rank; v2: + characteristics, modifiers; v3: + skills. Старые версии мигрируют с пустыми новыми полями.",
+  "title": "Dark Heresy 1e sheet (sheetVersion 4)",
+  "description": "Лист Dark Heresy 1e. Отсутствующие поля читаются как пустые / по умолчанию. v1: только player, homeworld, career, rank; v2: + characteristics, modifiers; v3: + skills; v4: homeworld, career, rank, skills[].specialization — choice вместо строки (миграция: строка s → {\"custom\": s}). Старые версии мигрируют с пустыми новыми полями.",
   "type": "object",
   "properties": {
     "player": {
       "type": "string"
     },
     "homeworld": {
-      "type": "string"
+      "$ref": "#/$defs/choice"
     },
     "career": {
-      "type": "string"
+      "$ref": "#/$defs/choice"
     },
     "rank": {
-      "type": "string"
+      "$ref": "#/$defs/choice"
     },
     "characteristics": {
       "description": "Ключи: ws, bs, s, t, ag, int, per, wp, fel. Неизвестные ключи игнорируются.",
@@ -40,6 +40,36 @@
     }
   },
   "$defs": {
+    "choice": {
+      "description": "Значение из каталога контента (id — показывается на языке контента) или своё, введённое игроком (custom — не переводится).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "content.schema.json#/$defs/id"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "custom"
+          ],
+          "properties": {
+            "custom": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "characteristic": {
       "type": "object",
       "properties": {
@@ -88,11 +118,11 @@
       ],
       "properties": {
         "skill": {
-          "type": "string",
+          "$ref": "content.schema.json#/$defs/id",
           "description": "Идентификатор навыка в контенте."
         },
         "specialization": {
-          "type": "string"
+          "$ref": "#/$defs/choice"
         },
         "training": {
           "type": "integer",

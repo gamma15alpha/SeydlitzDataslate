@@ -1,0 +1,67 @@
+{
+  "format": "seydlitz.content",
+  "formatVersion": 1,
+  "system": "dh1",
+  "revision": 1,
+  "name": { "ru": "Мок-пакет DH1", "en": "DH1 mock pack" },
+  "mock": true,
+  "content": {
+    "characteristics": [
+      {
+        "id": "per",
+        "abbreviation": "Per",
+        "name": { "ru": "Восприятие", "en": "Perception" },
+        "description": {
+          "ru": "Насколько персонаж замечает происходящее. Основа навыка [Внимательность](dataslate:skills/test-notice).",
+          "en": "How well the character notices things. Base of the [Notice](dataslate:skills/test-notice) skill."
+        }
+      }
+    ],
+    "rules": [
+      {
+        "id": "test-cover",
+        "name": { "ru": "Укрытие", "en": "Cover" },
+        "description": {
+          "ru": "## Укрытие\n\nПроверка [Восприятия](dataslate:characteristics/per) против укрытия:\n\n| Укрытие | Модификатор |\n|---|---|\n| Лёгкое | −10 |\n| Тяжёлое | −20 |\n\n![Схема укрытий](assets/cover-ru.png)",
+          "en": "## Cover\n\nA [Perception](dataslate:characteristics/per) test against cover:\n\n| Cover | Modifier |\n|---|---|\n| Light | −10 |\n| Heavy | −20 |\n\n![Cover diagram](assets/cover-en.png)"
+        }
+      }
+    ],
+    "homeworlds": [
+      { "id": "test-forge", "name": { "ru": "Мир-кузня Тест-IV", "en": "Test-IV Forge World" } },
+      { "id": "test-hive", "name": "Улей Примус" }
+    ],
+    "careers": [
+      {
+        "id": "test-scribe",
+        "name": { "ru": "Писарь", "en": "Scribe" },
+        "ranks": [
+          { "id": "test-scribe-1", "name": { "ru": "Ученик", "en": "Apprentice" } },
+          { "id": "test-scribe-2", "name": { "ru": "Переписчик", "en": "Copyist" } }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "id": "test-notice",
+        "name": { "ru": "Внимательность", "en": "Notice" },
+        "characteristic": "per",
+        "kind": "basic",
+        "description": {
+          "ru": "Проверка [Восприятия](dataslate:characteristics/per). Учитывает [укрытие](dataslate:rules/test-cover).",
+          "en": "A [Perception](dataslate:characteristics/per) test. Mind the [cover](dataslate:rules/test-cover)."
+        }
+      },
+      {
+        "id": "test-lore",
+        "name": { "ru": "Знание", "en": "Lore" },
+        "characteristic": "int",
+        "kind": "advanced",
+        "specializations": true,
+        "specializationOptions": [
+          { "id": "test-lore-archives", "name": { "ru": "Архивы", "en": "Archives" } }
+        ]
+      }
+    ]
+  }
+}
