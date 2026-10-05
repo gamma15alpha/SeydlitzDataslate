@@ -1,7 +1,8 @@
 {
   "app": {
     "title": "Seydlitz Dataslate",
-    "pageTitle": "{page} — Seydlitz Dataslate"
+    "pageTitle": "{page} — Seydlitz Dataslate",
+    "language": "Interface language"
   },
   "auth": {
     "login": "Login",
@@ -65,5 +66,14 @@
     "invalid_login": "Login: 3 to 32 characters — Latin letters, digits, “_”, “.”, “-”",
     "invalid_password": "Password: 8 to 128 characters",
     "invalid_display_name": "Name: at most 64 characters"
+  },
+  "casing": {
+    "ready": "Machine spirit: content",
+    "offline": "No network: working offline",
+    "fault": "Machine spirit unresponsive. Reload the page.",
+    "phosphor": "Phosphor",
+    "scanlines": "Scanlines",
+    "serverDown": "Server not responding: working offline",
+    "connecting": "Establishing vox link…"
   }
 }

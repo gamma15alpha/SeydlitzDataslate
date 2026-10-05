@@ -61,7 +61,7 @@ header {
   align-items: center;
   min-height: 36px;
   padding-left: 12px;
-  background: rgba(79, 168, 69, 0.22);
+  background: var(--phosphor-faint);
   border-bottom: 1px solid var(--phosphor-dim);
 }
 
@@ -70,7 +70,7 @@ header.draggable {
 }
 
 header.dragging {
-  background: rgba(79, 168, 69, 0.4);
+  background: color-mix(in srgb, var(--phosphor) 32%, var(--screen));
 }
 
 .title {
@@ -92,9 +92,10 @@ header.dragging {
   line-height: 1;
 }
 
-.close:hover {
-  background: #b3261e;
-  color: #fff;
+.close:hover:not(:disabled) {
+  background: var(--error-bg);
+  color: var(--diag-error);
+  text-shadow: none;
 }
 
 .body {

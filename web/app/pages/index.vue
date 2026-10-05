@@ -9,8 +9,7 @@ async function logout() {
 </script>
 
 <template>
-  <LocaleSwitch />
-  <main class="screen">
+  <main class="page">
     <h1>{{ t('app.title') }}</h1>
     <p>{{ auth.user.value?.displayName }} <span class="muted">({{ auth.user.value?.login }})</span></p>
     <p v-if="auth.offline.value" class="warning">{{ t('auth.offline') }}</p>
@@ -22,7 +21,7 @@ async function logout() {
 </template>
 
 <style scoped>
-.screen {
+.page {
   gap: 12px;
   text-align: center;
 }

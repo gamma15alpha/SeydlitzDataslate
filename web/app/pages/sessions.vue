@@ -50,10 +50,10 @@ onMounted(() => load())
 </script>
 
 <template>
-  <main class="screen">
+  <main class="page">
     <h1>{{ t('sessions.title') }}</h1>
     <ul>
-      <li v-for="s in sessions" :key="s.id">
+      <li v-for="s in sessions" :key="s.id" class="panel">
         <div>
           {{ device(s.userAgent) }}
           <span v-if="s.current" class="muted">{{ t('sessions.thisDevice') }}</span>
@@ -71,7 +71,7 @@ onMounted(() => load())
 </template>
 
 <style scoped>
-.screen {
+.page {
   gap: 16px;
 }
 
@@ -91,8 +91,6 @@ ul {
 li {
   display: grid;
   gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--phosphor-dim);
 }
 
 li button {

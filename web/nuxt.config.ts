@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: true },
   modules: ['@nuxtjs/i18n'],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/casing.css', '~/assets/css/main.css'],
   // В разработке API — Go-сервер (server/); в проде /api проксирует тот же обратный прокси.
   nitro: {
     devProxy: { '/api': { target: 'http://127.0.0.1:8090/api', changeOrigin: true } },

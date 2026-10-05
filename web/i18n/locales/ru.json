@@ -1,7 +1,8 @@
 {
   "app": {
     "title": "Seydlitz Dataslate",
-    "pageTitle": "{page} — Seydlitz Dataslate"
+    "pageTitle": "{page} — Seydlitz Dataslate",
+    "language": "Язык интерфейса"
   },
   "auth": {
     "login": "Логин",
@@ -65,5 +66,14 @@
     "invalid_login": "Логин: от 3 до 32 символов — латиница, цифры, «_», «.», «-»",
     "invalid_password": "Пароль: от 8 до 128 символов",
     "invalid_display_name": "Имя — не длиннее 64 символов"
+  },
+  "casing": {
+    "ready": "Дух машины доволен",
+    "offline": "Нет сети: работа офлайн",
+    "fault": "Дух машины не отвечает. Перезагрузите страницу.",
+    "phosphor": "Люминофор",
+    "scanlines": "Сканлайны",
+    "serverDown": "Сервер не отвечает: работа офлайн",
+    "connecting": "Установка связи…"
   }
 }

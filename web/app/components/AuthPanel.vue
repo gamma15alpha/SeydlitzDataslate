@@ -4,7 +4,7 @@ defineEmits<{ submit: [] }>()
 </script>
 
 <template>
-  <main class="screen">
+  <main class="page">
     <form class="panel" @submit.prevent="$emit('submit')">
       <h1>{{ title }}</h1>
       <slot />
@@ -20,6 +20,7 @@ defineEmits<{ submit: [] }>()
   display: grid;
   gap: 14px;
   width: min(360px, 100%);
+  box-sizing: border-box;
 }
 
 h1 {

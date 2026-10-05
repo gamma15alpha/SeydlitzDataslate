@@ -29,9 +29,11 @@ const skills = computed(() => (sheet.skills ?? []).map((s, i) => ({
   training: s.training ?? 1,
 })))
 
-// ПК и планшет от 1024px — справки в перетаскиваемых окнах, ссылка открывает окно рядом;
-// сенсорный экран 761–1023px — панель справа, уже — панель снизу; у панелей стек «Назад».
-const desktop = useMediaQuery('(min-width: 1024px), (min-width: 761px) and (pointer: fine)')
+// Ширина — экрана корпуса, не окна. Экран от 760px (или от 500px с мышью) — справки в перетаскиваемых окнах,
+// ссылка открывает окно рядом; сенсорный 500–759px — панель справа, уже — панель снизу; у панелей стек «Назад».
+const { size: screen } = useScreen()
+const finePointer = useMediaQuery('(pointer: fine)')
+const desktop = computed(() => screen.width >= 760 || (screen.width >= 500 && finePointer.value))
 const WINDOW_WIDTH = 380
 const GAP = 12
 
@@ -55,14 +57,14 @@ function openWindow(entry: CatalogEntry, from?: RefWindow) {
   let y: number
   if (from) {
     const right = from.x + WINDOW_WIDTH + GAP
-    x = right + WINDOW_WIDTH <= window.innerWidth ? right : from.x + 32
-    y = from.y + (right + WINDOW_WIDTH <= window.innerWidth ? 0 : 32)
+    x = right + WINDOW_WIDTH <= screen.width ? right : from.x + 32
+    y = from.y + (right + WINDOW_WIDTH <= screen.width ? 0 : 32)
   } else {
     const n = windows.value.length
-    x = Math.max(GAP, window.innerWidth - WINDOW_WIDTH - 24 - n * 24)
+    x = Math.max(GAP, screen.width - WINDOW_WIDTH - 24 - n * 24)
     y = 80 + n * 24
   }
-  windows.value.push({ key: nextKey++, entry, x, y: Math.min(y, window.innerHeight - 160), z: ++topZ })
+  windows.value.push({ key: nextKey++, entry, x, y: Math.min(y, screen.height - 160), z: ++topZ })
 }
 
 const closeWindow = (w: RefWindow) => (windows.value = windows.value.filter(o => o !== w))
@@ -84,7 +86,6 @@ function navigate(ref: string, from?: RefWindow) {
 </script>
 
 <template>
-  <LocaleSwitch />
   <div class="demo" :class="{ 'with-article': !desktop && opened.length }">
     <main>
       <h1>{{ t('demo.title') }}</h1>
@@ -165,9 +166,7 @@ function navigate(ref: string, from?: RefWindow) {
   gap: 24px;
   max-width: 1100px;
   margin: 0 auto;
-  padding:
-    calc(max(12px, env(safe-area-inset-top)) + 56px) max(16px, env(safe-area-inset-right))
-    max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: 16px 16px 48px;
 }
 
 .demo.with-article {
@@ -177,7 +176,7 @@ function navigate(ref: string, from?: RefWindow) {
 .demo.with-article > aside {
   position: sticky;
   top: 16px;
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100cqh - 32px);
 }
 
 h1,
@@ -191,14 +190,6 @@ h3 {
   gap: 8px;
   align-items: center;
   margin-bottom: 24px;
-}
-
-select {
-  font: inherit;
-  color: inherit;
-  background: var(--screen);
-  border: 1px solid var(--phosphor-dim);
-  padding: 4px 8px;
 }
 
 dl {
@@ -235,8 +226,8 @@ ul {
   list-style: none;
 }
 
-/* Телефон: описание — панель снизу поверх анкеты. */
-@media (max-width: 760px) {
+/* Узкий экран: описание — панель снизу поверх анкеты. */
+@container screen (max-width: 499px) {
   .demo.with-article {
     grid-template-columns: 1fr;
   }
@@ -245,8 +236,7 @@ ul {
     position: fixed;
     inset: auto 0 0;
     z-index: 10;
-    max-height: 75dvh;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    max-height: 75cqh;
     border-width: 1px 0 0;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.8);
   }

@@ -11,87 +11,185 @@
   font-display: swap;
 }
 
-/* Палитра когитатора (люминофор P1) */
+/*
+ * Палитра экрана. Как в версии на Avalonia (PhosphorTheme): все оттенки — из двух опорных цветов,
+ * свечения люминофора и фона экрана, поэтому новый люминофор — это две строки в html[data-phosphor].
+ */
 :root {
-  --screen: #030603;
   --phosphor: #8dff7a;
-  --phosphor-dim: #4fa845;
-  --phosphor-glow: rgba(120, 255, 100, 0.28);
-  --amber: #ffb347;
+  --screen: #030603;
+  --screen-core: #0b1a0a;
 
-  --font-mono: 'PT Mono', 'DejaVu Sans Mono', monospace;
-  --font-inscription: 'Forum', Georgia, serif;
+  --phosphor-secondary: color-mix(in srgb, var(--phosphor) 70%, var(--screen));
+  --phosphor-dim: color-mix(in srgb, var(--phosphor) 55%, var(--screen));
+  --phosphor-faint: color-mix(in srgb, var(--phosphor) 18%, var(--screen));
+  --panel: color-mix(in srgb, var(--phosphor) 4%, var(--screen));
+  --panel-border: color-mix(in srgb, var(--phosphor) 22%, var(--screen));
+  --phosphor-glow: color-mix(in srgb, var(--phosphor) 28%, transparent);
+  /* Свечение текста (bloom): плотное ядро и широкий ореол */
+  --bloom: 0 0 2px var(--phosphor-glow), 0 0 8px var(--phosphor-glow);
+
+  /* Уровни диагностики (D37) и тревожные кнопки — от люминофора не зависят */
+  --diag-error: #e0483a;
+  --diag-alert: #ffb347;
+  --diag-warning: #e3d96b;
+  --error-bg: #160705;
+
+  --font-mono: 'PT Mono', 'DejaVu Sans Mono', 'Courier New', monospace;
+  --font-inscription: 'Forum', Georgia, 'Times New Roman', serif;
+
+  /* Шкала: 10 / 13 / 14 / 16 / 22 / 28 */
+  --text-label: 0.625rem;
+  --text-xs: 0.8125rem;
+  --text-s: 0.875rem;
+  --text-m: 1rem;
+  --text-l: 1.375rem;
+  --text-xl: 1.75rem;
 
   color-scheme: dark;
-}
-
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: var(--screen);
-  color: var(--phosphor);
   font-family: var(--font-mono);
 }
 
-.screen {
+/* Люминофор выбирается ручкой PHOSPHOR на корпусе */
+html[data-phosphor='amber'] {
+  --phosphor: #ffb000;
+  --screen: #060402;
+  --screen-core: #1a1205;
+}
+
+html[data-phosphor='white'] {
+  --phosphor: #e8f1ff;
+  --screen: #040506;
+  --screen-core: #12151a;
+}
+
+/* ---------- Экран приложения ---------- */
+
+/* :where — нулевая специфичность: стили компонентов перекрывают эти без борьбы, а корпус они не задевают */
+.screen-content {
+  background: radial-gradient(ellipse at 30% 40%, var(--screen-core) 0%, var(--screen) 70%);
+  color: var(--phosphor);
+  text-shadow: var(--bloom);
+  scrollbar-color: var(--phosphor-dim) transparent;
+}
+
+:where(.screen-content) ::selection {
+  background: color-mix(in srgb, var(--phosphor) 35%, transparent);
+}
+
+/* Страница по центру экрана */
+.page {
   display: grid;
   place-content: center;
   justify-items: center;
-  min-height: 100dvh;
-  /* Сверху — место под переключатель языка в углу. */
-  padding:
-    calc(max(12px, env(safe-area-inset-top)) + 56px) max(16px, env(safe-area-inset-right))
-    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  min-height: 100%;
+  padding: 16px;
   box-sizing: border-box;
-  text-shadow: 0 0 6px var(--phosphor-glow);
 }
 
-h1 {
+:where(.screen-content) :is(h1, h2, h3) {
   font-family: var(--font-inscription);
   font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
-label {
+:where(.screen-content) h1 {
+  font-size: var(--text-l);
+}
+
+:where(.screen-content) h2 {
+  font-size: 1.25rem;
+}
+
+:where(.screen-content) h3 {
+  font-size: 1.125rem;
+}
+
+:where(.screen-content) label {
   display: grid;
   gap: 4px;
 }
 
-input,
-button {
+/* Раздел: панель Border.panel */
+.panel {
+  padding: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  background: var(--panel);
+}
+
+/* Поля ввода — как TextBox Fluent в палитре люминофора */
+:where(.screen-content) :is(input, select, textarea) {
   font: inherit;
   color: inherit;
+  text-shadow: inherit;
+  background: var(--screen);
+  border: 1px solid var(--phosphor-faint);
+  border-bottom-color: var(--phosphor-dim);
+  border-radius: 3px;
+  padding: 6px 10px;
+}
+
+:where(.screen-content) :is(input, select, textarea):hover {
+  border-color: var(--phosphor-dim);
+}
+
+:where(.screen-content) :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--phosphor-dim);
+  border-bottom: 2px solid var(--phosphor);
+  padding-bottom: 5px;
+}
+
+:where(.screen-content) option {
+  background: var(--screen);
+}
+
+/* Кнопки терминала: Button.terminal */
+:where(.screen-content) button {
+  font: inherit;
+  color: var(--phosphor);
+  text-shadow: inherit;
   background: transparent;
   border: 1px solid var(--phosphor-dim);
-  padding: 8px 10px;
-}
-
-input:focus-visible,
-button:focus-visible {
-  outline: none;
-  border-color: var(--phosphor);
-  box-shadow: 0 0 8px var(--phosphor-glow);
-}
-
-button {
+  border-radius: 0;
+  padding: 5px 12px;
   cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
-button:hover:not(:disabled) {
-  background: rgba(141, 255, 122, 0.08);
+:where(.screen-content) button:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--phosphor);
 }
 
-button:disabled {
+:where(.screen-content) button:focus-visible {
+  outline: 1px solid var(--phosphor);
+  outline-offset: 2px;
+}
+
+:where(.screen-content) button:disabled {
   opacity: 0.5;
   cursor: wait;
 }
 
-a {
+/* Опасное действие: Button.terminal.alert */
+:where(.screen-content) button.alert {
+  color: var(--diag-error);
+  border-color: var(--diag-error);
+  text-shadow: none;
+}
+
+:where(.screen-content) button.alert:hover:not(:disabled) {
+  background: var(--error-bg);
+  border-color: var(--diag-error);
+}
+
+:where(.screen-content) a {
   color: inherit;
+}
+
+:where(.screen-content) a:hover {
+  color: var(--phosphor-secondary);
 }
 
 /* Окно справки перетаскивают или меняют размер (FloatingWindow). */
@@ -109,24 +207,28 @@ html.window-resizing * {
 
 /* Сенсорные экраны: зона нажатия не меньше 44px. */
 @media (pointer: coarse) {
-  button,
-  input,
-  select {
+  :where(.screen-content) :is(button, input, select) {
     min-height: 44px;
   }
 
-  .screen > a {
+  :where(.page) > a {
     padding-block: 10px;
   }
 }
 
+/* Второстепенный текст: SecondaryTextBrush */
 .muted {
-  color: var(--phosphor-dim);
+  color: var(--phosphor-secondary);
 }
 
-.error,
+.error {
+  margin: 0;
+  color: var(--diag-error);
+  text-shadow: none;
+}
+
 .warning {
   margin: 0;
-  color: var(--amber);
+  color: var(--diag-alert);
   text-shadow: none;
 }

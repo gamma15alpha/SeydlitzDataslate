@@ -1,0 +1,1085 @@
+/* Корпус датаслейта вокруг экрана приложения (DataslateCasing.vue). Перенесён из версии на Avalonia (D10–D12). */
+
+/* Токены корпуса. Свет падает сверху слева: блики — на верхних и левых гранях, тени — на нижних и правых. */
+:root {
+  /* Литой металл корпуса */
+  --iron-hi: #4a443a;
+  --iron: #2a2620;
+  --iron-lo: #15130f;
+  --iron-deep: #0b0a08;
+
+  /* Латунь */
+  --brass-hi: #e2c27f;
+  --brass: #c29a58;
+  --brass-lo: #8a6a32;
+  --brass-dark: #3b2b12;
+
+  /* Хром винтов и ободков */
+  --chrome-hi: #e4ddcc;
+  --chrome: #a39c8d;
+  --chrome-lo: #5d564a;
+
+  /* Светодиод кнопки SCAN — «железо», от люминофора не зависит */
+  --led: #8dff7a;
+  --amber: #ffb347;
+  --red: #d33b2c; /* лампы, рамки */
+  --red-text: #e0483a; /* текст на экране: ≥4.5:1 */
+
+  /* Краска маркировки, воск, пергамент */
+  --stencil: #d8d0bc;
+  --wax: #9c2316;
+  --parchment: #d9c9a3;
+
+  /* Сила сканлайнов (кнопка SCAN выключает их совсем) */
+  --scanline-strength: 1;
+
+  --deck-top: 84px;
+  --deck-bottom: 72px;
+  --column: 104px;
+  --bezel-pad: 26px;
+
+  /* Текстуры: зерно литья, шлифовка, грязь. Шум SVG feTurbulence, без внешних файлов */
+  --tex-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0.09'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-brushed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0.16'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-grime: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.03 0 0 0 0 0.02 1.7 0 0 0 -0.78'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--iron-deep);
+}
+
+/* ---------- Корпус ---------- */
+
+/*
+ * Корпус — сетка с именованными областями: на телефоне стойки переставляются
+ * только стилями (см. «Телефоны» в конце файла).
+ */
+.housing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* dvh: корпус не уезжает под панели мобильного браузера */
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: var(--column) minmax(0, 1fr) var(--column);
+  grid-template-rows: var(--deck-top) minmax(0, 1fr) var(--deck-bottom);
+  grid-template-areas:
+    "top  top    top"
+    "left screen right"
+    "bottom bottom bottom";
+  /* вырез камеры и полоса жестов (нужен viewport-fit=cover) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+  background:
+    var(--tex-grime),
+    var(--tex-grain),
+    /* копоть в углах */
+    radial-gradient(circle at 0 0, rgba(0, 0, 0, 0.5), transparent 26%),
+    radial-gradient(circle at 100% 0, rgba(0, 0, 0, 0.45), transparent 24%),
+    radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0.55), transparent 28%),
+    radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0.6), transparent 30%),
+    /* общий свет сверху слева */
+    linear-gradient(160deg, var(--iron-hi) 0%, var(--iron) 38%, var(--iron-lo) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+  /* Надписи корпуса — декор: не выделяются ни протяжкой, ни двойным кликом по ручкам */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.deck {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 18px;
+  padding: 0 18px;
+}
+
+.deck-spacer {
+  flex: 1;
+}
+
+/* Стык панелей — канавка: тёмная линия и блик под ней */
+.deck-top {
+  height: var(--deck-top);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 60%);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.deck-bottom {
+  height: var(--deck-bottom);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 -1px 0 rgba(0, 0, 0, 0.75);
+}
+
+.deck-top { grid-area: top; }
+.deck-bottom { grid-area: bottom; }
+.column-left { grid-area: left; }
+.column-right { grid-area: right; }
+.bezel { grid-area: screen; }
+
+.column {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 16px 0;
+  box-sizing: border-box;
+}
+
+/* ---------- Винты ---------- */
+
+.screw {
+  --r: 0deg;
+  position: relative;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, var(--chrome-hi) 0, var(--chrome) 30%, var(--chrome-lo) 62%, #2c2822 100%);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.6),
+    0 0 0 3px rgba(255, 255, 255, 0.07),
+    0 2px 3px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Шлиц: у каждого винта свой поворот (--r) */
+.screw::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  right: 2px;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: #1b1814;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: rotate(var(--r));
+}
+
+/* ---------- Табличка ---------- */
+
+.nameplate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 30px 10px 24px;
+  border-radius: 3px;
+  background:
+    /* заклёпки по углам */
+    radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) left 4px top 4px / 8px 8px no-repeat,
+    radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) right 4px top 4px / 8px 8px no-repeat,
+    radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) left 4px bottom 4px / 8px 8px no-repeat,
+    radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) right 4px bottom 4px / 8px 8px no-repeat,
+    /* патина */
+    radial-gradient(ellipse at 85% 80%, rgba(60, 80, 50, 0.35), transparent 45%),
+    radial-gradient(ellipse at 10% 90%, rgba(40, 30, 10, 0.35), transparent 40%),
+    var(--tex-brushed),
+    linear-gradient(180deg, #dcbb75 0%, #b88f48 48%, var(--brass-lo) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 215, 0.55),
+    inset 0 -1px 0 rgba(60, 40, 10, 0.6),
+    0 0 0 1px var(--brass-dark),
+    0 3px 4px rgba(0, 0, 0, 0.6);
+}
+
+.nameplate-emblem {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  color: #4a3615;
+  filter: drop-shadow(0 1px 0 rgba(255, 240, 200, 0.45));
+}
+
+.nameplate-emblem svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.nameplate-eye {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ff9a88, var(--red) 45%, #4a0d08);
+  box-shadow: 0 0 0 1px var(--brass-dark), 0 0 6px rgba(211, 59, 44, 0.6);
+}
+
+/* Гравировка в латуни: тёмная бороздка с бликом по нижнему краю */
+.nameplate-title {
+  margin: 0;
+  font-family: var(--font-inscription);
+  font-size: var(--text-l);
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #3d2c10;
+  text-shadow: 0 1px 0 rgba(255, 238, 195, 0.55), 0 -1px 0 rgba(40, 25, 5, 0.35);
+}
+
+/* Клеймо с серийным номером, выбитое в металле */
+.serial {
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--stencil);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.55), 0 1px 0 1px rgba(255, 255, 255, 0.06);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* Маркировка краской по трафарету */
+.stencil {
+  font-size: var(--text-label);
+  line-height: 1;
+  letter-spacing: 0.16em;
+  color: var(--stencil);
+  opacity: 0.8;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* ---------- Сигнальные лампы ---------- */
+
+.lamps {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.lamp-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.lamp {
+  --lamp: #7dff6a;
+  /* хромированный ободок и посадочное гнездо */
+  --lamp-ring: 0 0 0 2px #15130f, 0 0 0 4px var(--chrome), 0 0 0 5px #3a352d, 0 2px 3px 5px rgba(0, 0, 0, 0.45);
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  /* выключена: тёмное цветное стекло */
+  background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--lamp) 22%, #120d08) 0, #0a0806 75%);
+  box-shadow: var(--lamp-ring), inset 0 -2px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* Блик на линзе */
+.lamp::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 7px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  filter: blur(0.5px);
+}
+
+.lamp.on {
+  background: radial-gradient(circle at 50% 55%, #fffbe6 0, var(--lamp) 38%, color-mix(in srgb, var(--lamp) 55%, #000) 100%);
+  box-shadow: var(--lamp-ring), 0 0 16px 5px color-mix(in srgb, var(--lamp) 50%, transparent);
+}
+
+.lamp.blink {
+  animation: lamp-blink 0.7s steps(2, jump-none) infinite;
+}
+
+/* Лампа PWR при ошибке: красная */
+.lamp.fault {
+  --lamp: #ff3b2a;
+}
+
+/* Лампа VOX, сервер не отвечает: красная и медленно мигает — отличается от ровной красной PWR и частой ACT */
+.lamp.alarm {
+  --lamp: #ff3b2a;
+  animation: lamp-blink 1.4s steps(2, jump-none) infinite;
+}
+
+/* ---------- Решётки, вентиляция, трубы ---------- */
+
+.grille {
+  flex: none;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle, #030302 0 1.8px, rgba(255, 255, 255, 0.07) 2.2px, transparent 2.8px) 0 0 / 7px 7px,
+    linear-gradient(180deg, #25221c, #17150f);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px var(--iron-deep);
+}
+
+.grille-top {
+  width: 132px;
+  height: 40px;
+}
+
+.grille-bottom {
+  width: 160px;
+  height: 30px;
+}
+
+.vents {
+  flex: none;
+  width: 56px;
+  height: 140px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(180deg, #050403 0 6px, #3e382f 6px 7px, #1f1c17 7px 11px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.07), 0 0 0 1px var(--iron-deep);
+}
+
+.conduits {
+  position: relative;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: 8px;
+  width: 64px;
+  min-height: 0;
+}
+
+/* Гофрированная труба: кольца поверх цилиндрической заливки */
+.conduit {
+  width: 20px;
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0 2px, rgba(255, 255, 255, 0.05) 2px 3px, transparent 3px 7px),
+    linear-gradient(90deg, #100e0b 0%, #6b6253 32%, #3a352d 60%, #0d0c0a 100%);
+  box-shadow: 4px 0 6px rgba(0, 0, 0, 0.5);
+}
+
+.conduit-thin {
+  width: 12px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0 2px, transparent 2px 5px),
+    linear-gradient(90deg, #120808 0%, #7a2a1f 35%, #3d1410 65%, #0d0605 100%);
+}
+
+/* Латунный хомут с двумя винтами */
+.clamp {
+  position: absolute;
+  left: 50%;
+  width: 66px;
+  height: 16px;
+  border-radius: 3px;
+  translate: -50% 0;
+  background:
+    radial-gradient(circle, var(--chrome-hi) 0 1px, var(--chrome-lo) 2.5px, #1b1814 3.5px, transparent 4px) left 5px center / 9px 9px no-repeat,
+    radial-gradient(circle, var(--chrome-hi) 0 1px, var(--chrome-lo) 2.5px, #1b1814 3.5px, transparent 4px) right 5px center / 9px 9px no-repeat,
+    linear-gradient(180deg, var(--brass-hi), var(--brass) 40%, var(--brass-lo));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 3px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Органы управления ---------- */
+
+.control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+/* Переключатель люминофора: метки шкалы по дуге, ручка поворачивается к выбранной */
+.phosphor-selector {
+  position: relative;
+  /* без задержки двойного тапа на телефоне */
+  touch-action: manipulation;
+  width: 88px;
+  height: 84px;
+}
+
+.phosphor-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--stencil);
+  opacity: 0.55;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+  /* по дуге радиусом 34px, подпись остаётся горизонтальной */
+  transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-34px) rotate(calc(-1 * var(--angle)));
+  transition: opacity 120ms;
+}
+
+/* Цветная точка — цвет люминофора этого положения */
+.phosphor-mark::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mark) 35%, #0b0a08);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+.phosphor-mark:hover {
+  opacity: 0.8;
+}
+
+.phosphor-mark.active {
+  opacity: 1;
+}
+
+.phosphor-mark.active::after {
+  background: var(--mark);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--mark) 60%, transparent);
+}
+
+/* Ручка с накаткой; указатель — светлая риска */
+.knob {
+  --angle: -55deg;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: repeating-conic-gradient(#1d1a15 0 5deg, #4b453a 5deg 10deg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--iron-deep);
+  transform: rotate(var(--angle));
+  transition: transform 160ms ease-out;
+}
+
+.knob:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 4px;
+}
+
+.knob::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #6e675a 0, #34302a 55%, #191713 100%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.knob::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 3px;
+  height: 12px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #e9e1cd;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Кнопка с фиксацией: включено — утоплена, светодиод горит */
+.push-button {
+  position: relative;
+  touch-action: manipulation;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: radial-gradient(circle at 40% 32%, #57503f 0, #2b2721 55%, #15130f 100%);
+  /* хромированный ободок, гнездо и выпуклый колпачок */
+  box-shadow:
+    0 0 0 3px #15130f,
+    0 0 0 5px var(--chrome),
+    0 0 0 6px #3a352d,
+    0 4px 5px 6px rgba(0, 0, 0, 0.45),
+    inset 0 2px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
+
+.push-button[aria-pressed="true"] {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 3px #15130f,
+    0 0 0 5px var(--chrome),
+    0 0 0 6px #3a352d,
+    0 3px 4px 6px rgba(0, 0, 0, 0.45),
+    inset 0 3px 5px rgba(0, 0, 0, 0.65),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06);
+}
+
+.push-button:active {
+  transform: translateY(2px);
+}
+
+.push-button:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 8px;
+}
+
+.push-button-led {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 40%, #1d3a1a, #071006);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: background 120ms, box-shadow 120ms;
+}
+
+.push-button[aria-pressed="true"] .push-button-led {
+  background: radial-gradient(circle at 45% 40%, #eaffdf 0, var(--led) 45%, #2f7a27 100%);
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--led) 30%, transparent), 0 0 2px var(--led);
+}
+
+/* Ползунок языка: прорезь в металле, рифлёная хромированная ручка ездит по ней */
+.lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  touch-action: manipulation;
+}
+
+.lang-mark {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--stencil);
+  opacity: 0.55;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
+  transition: opacity 120ms;
+}
+
+.lang-mark:hover {
+  opacity: 0.8;
+}
+
+.lang-mark.active {
+  opacity: 1;
+}
+
+.slide-switch {
+  --pos: 0;
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  /* Свайп по ползунку — его, а не жест браузера */
+  touch-action: none;
+  background: linear-gradient(180deg, #050403, #1a1712);
+  /* утопленная прорезь в хромированной окантовке */
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.85),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 2px #15130f,
+    0 0 0 3px var(--chrome-lo),
+    0 1px 0 3px rgba(255, 255, 255, 0.07);
+}
+
+/* Направляющая по дну прорези */
+.slide-switch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  margin-top: -1px;
+  background: #000;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Зона нажатия выше самого ползунка — 44px по высоте */
+.slide-switch::after {
+  content: '';
+  position: absolute;
+  inset: -11px -4px;
+}
+
+.slide-switch.dragging {
+  cursor: grabbing;
+}
+
+/* Во время свайпа ручка идёт за пальцем без запаздывания */
+.slide-switch.dragging .slide-knob {
+  transition: none;
+}
+
+.slide-switch:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 5px;
+}
+
+.slide-knob {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 24px;
+  height: 18px;
+  border-radius: 3px;
+  background:
+    /* рифление под палец */
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0 1px, rgba(255, 255, 255, 0.22) 1px 2px, transparent 2px 4px) center / 13px 10px no-repeat,
+    linear-gradient(180deg, var(--chrome-hi), var(--chrome) 45%, var(--chrome-lo));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 0 0 1px #15130f,
+    0 2px 3px rgba(0, 0, 0, 0.7);
+  /* два положения: ход = 52 − 2×3 − 24 */
+  transform: translateX(calc(var(--pos) * 22px));
+  transition: transform 140ms ease-out;
+}
+
+/* ---------- Печать чистоты ---------- */
+
+.seal {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 150px;
+  transform: rotate(-4deg);
+  /* тень от лент: clip-path срезает box-shadow, поэтому фильтр на родителе */
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.55));
+}
+
+.seal-wax {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 9px;
+  width: 46px;
+  height: 44px;
+  border-radius: 52% 48% 46% 54% / 50% 55% 45% 50%;
+  background: radial-gradient(circle at 38% 32%, #d0533c 0, var(--wax) 40%, #5e0f08 85%);
+  box-shadow:
+    inset 0 0 0 4px rgba(0, 0, 0, 0.16),
+    inset 2px 3px 4px rgba(255, 190, 170, 0.25),
+    inset -3px -4px 6px rgba(0, 0, 0, 0.45);
+  color: rgba(60, 8, 4, 0.7);
+}
+
+/* Потёки воска */
+.seal-wax::before,
+.seal-wax::after {
+  content: '';
+  position: absolute;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  background: radial-gradient(circle at 40% 30%, #b8382a, #6a120a);
+}
+
+.seal-wax::before {
+  right: 5px;
+  bottom: -7px;
+  width: 9px;
+  height: 12px;
+}
+
+.seal-wax::after {
+  left: 9px;
+  bottom: -4px;
+  width: 6px;
+  height: 8px;
+}
+
+.seal-wax svg {
+  position: absolute;
+  inset: 9px 10px;
+  filter: drop-shadow(0 1px 0 rgba(255, 160, 140, 0.35));
+}
+
+/* Пергамент: строки текста, рваный край */
+.seal-ribbon {
+  position: absolute;
+  top: 30px;
+  width: 15px;
+  transform-origin: 50% 0;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 5px, rgba(60, 40, 15, 0.55) 5px 6px) center 10px / 9px calc(100% - 24px) no-repeat,
+    var(--tex-grain),
+    linear-gradient(90deg, #c4b086, var(--parchment) 40%, #b9a273);
+  clip-path: polygon(0 0, 100% 0, 100% 94%, 82% 100%, 64% 95%, 46% 99%, 28% 94%, 12% 99%, 0 95%);
+}
+
+.seal-ribbon.r1 {
+  left: 14px;
+  height: 118px;
+  transform: rotate(2deg);
+}
+
+.seal-ribbon.r2 {
+  left: 32px;
+  height: 94px;
+  transform: rotate(-4deg);
+}
+
+/* ---------- Нижняя панель ---------- */
+
+/* Предупредительная разметка, затёртая */
+.hazard {
+  flex: none;
+  width: 200px;
+  height: 16px;
+  border-radius: 2px;
+  background:
+    var(--tex-grime),
+    var(--tex-grain),
+    repeating-linear-gradient(-45deg, #c39a1e 0 11px, #17150f 11px 22px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.05);
+  opacity: 0.88;
+}
+
+.ports {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.port {
+  width: 30px;
+  height: 13px;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg, #8c7a52 0 2px, transparent 2px 5px) center / 20px 4px no-repeat,
+    linear-gradient(#030302, #13110d);
+  box-shadow: 0 0 0 2px #3a352d, 0 0 0 3px var(--iron-deep), inset 0 2px 3px #000;
+}
+
+.port-round {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8c7a52 0 1.5px, #030302 2px 5px, #1a1814 6px);
+}
+
+/* ЖК-индикатор статуса в утопленном окне */
+.lcd {
+  display: flex;
+  align-items: center;
+  min-width: 380px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, color-mix(in srgb, var(--phosphor) 4%, #020302), color-mix(in srgb, var(--phosphor) 9%, #020302));
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px #000,
+    0 0 0 4px #2b2721,
+    0 0 0 5px rgba(255, 255, 255, 0.07),
+    0 2px 0 5px rgba(0, 0, 0, 0.55);
+}
+
+.lcd-text {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--phosphor);
+  text-shadow: var(--bloom);
+}
+
+.lcd-text.fail {
+  color: var(--red-text);
+  text-shadow: none;
+}
+
+/* ---------- Экран в рамке ---------- */
+
+.bezel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 10px 0;
+  border-radius: 16px;
+  background: var(--tex-grain), linear-gradient(165deg, #3d382f, #24211b 45%, #16140f);
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.13),
+    inset 2px 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 -3px 2px rgba(0, 0, 0, 0.7),
+    inset -2px 0 2px rgba(0, 0, 0, 0.5),
+    0 6px 14px rgba(0, 0, 0, 0.6),
+    0 0 0 1px var(--iron-deep);
+}
+
+.bezel-screw {
+  position: absolute;
+}
+
+.bezel-screw.tl { top: 6px; left: 6px; }
+.bezel-screw.tr { top: 6px; right: 6px; }
+.bezel-screw.bl { bottom: 6px; left: 6px; }
+.bezel-screw.br { bottom: 6px; right: 6px; }
+
+/* Посадочное место кинескопа: резиновый уплотнитель и тонкий блик по краю */
+.screen-well {
+  position: absolute;
+  inset: var(--bezel-pad);
+  border-radius: 10px;
+  background: #000;
+  box-shadow:
+    0 0 0 4px var(--iron-deep),
+    0 0 0 5px rgba(255, 255, 255, 0.08),
+    0 -1px 0 6px rgba(0, 0, 0, 0.6),
+    0 0 22px color-mix(in srgb, var(--phosphor) 9%, transparent);
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--screen);
+}
+
+/*
+ * Приложение — внутри экрана. container-type: size — контейнер для @container screen и единиц cq*;
+ * contain: layout — точка отсчёта для position: fixed (окна и панели справок). Сам container-type
+ * её не даёт: layout-containment из него убрали в спецификации.
+ */
+.screen {
+  container: screen / size;
+  contain: layout paint;
+}
+
+/* Приложение на экране выделяется как обычно */
+.screen-content {
+  -webkit-user-select: text;
+  user-select: text;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/*
+ * Сканлайны поверх экрана; клики проходят насквозь.
+ * Как у кинескопа: тёмный промежуток и слабо светящаяся строка люминофора —
+ * одни тёмные линии на почти чёрном экране не видны.
+ */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  opacity: var(--scanline-strength);
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.34) 0 2px,
+    color-mix(in srgb, var(--phosphor) 4%, transparent) 2px 3px,
+    transparent 3px 4px);
+}
+
+html.no-scanlines .scanlines {
+  display: none;
+}
+
+/* Стекло: блик сверху слева и виньетка — края выпуклого кинескопа темнее центра */
+.glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  background:
+    linear-gradient(158deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 18%, transparent 34%),
+    radial-gradient(ellipse 110% 95% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.32) 78%, rgba(0, 0, 0, 0.68) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 28px rgba(0, 0, 0, 0.65),
+    inset 0 0 70px rgba(0, 0, 0, 0.45),
+    inset 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Анимации ---------- */
+
+@keyframes lamp-blink {
+  50% { filter: brightness(0.35); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lamp.blink,
+  .lamp.alarm {
+    animation: none;
+  }
+
+  .push-button, .push-button-led, .knob, .phosphor-mark, .lang-mark, .slide-knob {
+    transition: none;
+  }
+}
+
+/* ---------- Телефоны ---------- */
+
+/*
+ * На телефоне рамка — две тонкие полосы (~100 px вместо ~250 на 412×922):
+ * сверху табличка и лампы, снизу ЖК-окно статуса, рамка экрана 6 px.
+ * Ручка PHOSPHOR, кнопка SCAN и печать убраны ради места (D12); их место — будущий экран настроек приложения.
+ * Сохранённый выбор люминофора и сканлайнов при этом продолжает действовать.
+ */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --bezel-pad: 6px;
+  }
+
+  .column-left,
+  .column-right,
+  .serial,
+  .grille,
+  .hazard,
+  .ports,
+  .deck .screw,
+  .bezel-screw {
+    display: none;
+  }
+
+  /* Высоту панелей задаёт строка сетки, а не десктопная --deck-top / --deck-bottom */
+  .deck-top,
+  .deck-bottom {
+    height: auto;
+  }
+
+  .deck {
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  .deck-top .deck-spacer {
+    flex: 1 0 0;
+  }
+
+  /* Внизу ЖК-окно занимает всю ширину — распорки не нужны */
+  .deck-bottom .deck-spacer {
+    display: none;
+  }
+
+  .bezel {
+    margin: 0 6px;
+    border-radius: 10px;
+  }
+
+  .screen-well,
+  .screen,
+  .scanlines,
+  .glass {
+    border-radius: 6px;
+  }
+
+  .lcd {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+  }
+
+  /* Ползунок LANG остаётся рядом с ЖК-окном — без подписи, места мало */
+  .deck-bottom .control .stencil {
+    display: none;
+  }
+}
+
+/* Портрет (Galaxy S25 / S25+ / S25 Ultra: 360–412 px) */
+@media (max-width: 600px) {
+  .housing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 44px minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "top"
+      "screen"
+      "bottom";
+  }
+
+  .nameplate {
+    gap: 8px;
+    min-width: 0;
+    padding: 5px 12px 5px 8px;
+  }
+
+  .nameplate-emblem {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nameplate-eye {
+    inset: 7px;
+  }
+
+  .nameplate-title {
+    overflow: hidden;
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .lamps {
+    flex: none;
+    gap: 12px;
+  }
+
+  /* Подписи ламп оставляем: они объясняют, что горит */
+  .lamp-unit {
+    gap: 4px;
+  }
+
+  .lamp-unit .stencil {
+    font-size: 0.5625rem;
+  }
+
+  .lamp {
+    width: 12px;
+    height: 12px;
+  }
+
+  .lamp::after {
+    top: 2px;
+    left: 3px;
+    width: 4px;
+    height: 3px;
+  }
+}
+
+/* Альбомная ориентация (высота около 360–412 px): только экран и полоса статуса */
+@media (orientation: landscape) and (max-height: 500px) {
+  .housing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 36px;
+    grid-template-areas:
+      "screen"
+      "bottom";
+  }
+
+  .deck-top {
+    display: none;
+  }
+
+  .bezel {
+    margin: 6px 6px 0;
+  }
+}

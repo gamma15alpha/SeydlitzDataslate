@@ -18,7 +18,6 @@ async function submit() {
 </script>
 
 <template>
-  <LocaleSwitch />
   <AuthPanel :title="t('auth.loginTitle')" :submit-label="t('auth.loginSubmit')" :error="error" :busy="busy" @submit="submit">
     <p v-if="auth.notice.value" class="warning" role="status">{{ t(auth.notice.value) }}</p>
     <label>

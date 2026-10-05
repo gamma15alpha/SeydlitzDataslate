@@ -1,10 +1,12 @@
 <script setup lang="ts">
 const props = defineProps<{ x: number; y: number; z: number }>()
 const emit = defineEmits<{ move: [x: number, y: number]; focus: [] }>()
+// Окно живёт на экране корпуса: координаты и пределы — от него (position: fixed внутри .screen).
+const { size: screen } = useScreen()
 const MIN_WIDTH = 260
 const MIN_HEIGHT = 160
 const width = ref(380)
-const height = ref(Math.min(480, Math.round(window.innerHeight * 0.7)))
+const height = ref(Math.min(480, Math.round(screen.height * 0.7)))
 const dragging = ref(false)
 
 // Указатель (мышь или палец) захватывается элементом, пока не отпустят. Пока тянут — класс на <html>:
@@ -26,15 +28,15 @@ function track(e: PointerEvent, cursorClass: string, onMove: (ev: PointerEvent) 
   handle.addEventListener('pointercancel', stop)
 }
 
-// Перетаскивание за заголовок: содержимое вызывает grab на pointerdown. Заголовок не уходит за край экрана.
+// Перетаскивание за заголовок: содержимое вызывает grab на pointerdown. Заголовок не уходит за край экрана корпуса.
 function grab(e: PointerEvent) {
   if ((e.target as HTMLElement).closest('button, a, input, select')) return
   const dx = e.clientX - props.x
   const dy = e.clientY - props.y
   dragging.value = true
   track(e, 'window-dragging', ev => emit('move',
-    Math.min(Math.max(ev.clientX - dx, 48 - width.value), window.innerWidth - 48),
-    Math.min(Math.max(ev.clientY - dy, 0), window.innerHeight - 48),
+    Math.min(Math.max(ev.clientX - dx, 48 - width.value), screen.width - 48),
+    Math.min(Math.max(ev.clientY - dy, 0), screen.height - 48),
   ), () => (dragging.value = false))
 }
 
@@ -45,8 +47,8 @@ function resize(e: PointerEvent) {
   const startW = width.value
   const startH = height.value
   track(e, 'window-resizing', (ev) => {
-    width.value = Math.min(Math.max(startW + ev.clientX - startX, MIN_WIDTH), window.innerWidth - props.x)
-    height.value = Math.min(Math.max(startH + ev.clientY - startY, MIN_HEIGHT), window.innerHeight - props.y)
+    width.value = Math.min(Math.max(startW + ev.clientX - startX, MIN_WIDTH), screen.width - props.x)
+    height.value = Math.min(Math.max(startH + ev.clientY - startY, MIN_HEIGHT), screen.height - props.y)
   })
 }
 </script>

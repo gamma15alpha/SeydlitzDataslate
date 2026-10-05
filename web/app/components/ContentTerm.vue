@@ -40,7 +40,7 @@ button.term {
 
 button.term:hover {
   background: transparent;
-  color: #fff;
+  color: var(--phosphor-secondary);
 }
 
 .abbr {
