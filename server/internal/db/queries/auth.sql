@@ -6,6 +6,13 @@ RETURNING *;
 -- name: GetUserByLogin :one
 SELECT * FROM users WHERE lower(login) = lower(@login);
 
+-- name: UpdateUserLogin :one
+UPDATE users SET login = @login WHERE id = @id
+RETURNING *;
+
+-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = @password_hash WHERE id = @id;
+
 -- Вызывать в одной транзакции с CreateUser.
 -- name: ClaimInvite :one
 UPDATE invites SET used_at = now()

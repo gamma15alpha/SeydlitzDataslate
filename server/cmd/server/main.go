@@ -18,11 +18,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/term"
 
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/api"
-	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/logging"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/session"
 )
 
 const usage = `usage:
@@ -116,7 +117,7 @@ func cleanupSessions(ctx context.Context, q *dbq.Queries) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	for {
-		n, err := q.DeleteExpiredSessions(ctx)
+		n, err := session.Cleanup(ctx, q)
 		if err != nil && ctx.Err() == nil {
 			slog.Error("cleanup sessions", "err", err)
 		} else if n > 0 {
@@ -131,15 +132,16 @@ func cleanupSessions(ctx context.Context, q *dbq.Queries) {
 }
 
 func createAdmin(ctx context.Context, login string) error {
-	if msg := auth.ValidateLogin(login); msg != "" {
-		return errors.New(msg)
+	// Логин — до вопроса о пароле: не заставлять вводить пароль зря.
+	if err := account.ValidateLogin(login); err != nil {
+		return err
 	}
 	password, err := readPassword()
 	if err != nil {
 		return err
 	}
-	if msg := auth.ValidatePassword(password); msg != "" {
-		return errors.New(msg)
+	if err := account.ValidatePassword(password); err != nil {
+		return err
 	}
 	pool, err := openDB(ctx)
 	if err != nil {
@@ -147,10 +149,8 @@ func createAdmin(ctx context.Context, login string) error {
 	}
 	defer pool.Close()
 
-	user, err := dbq.New(pool).CreateUser(ctx, dbq.CreateUserParams{
-		Login: login, DisplayName: login, PasswordHash: auth.HashPassword(password), IsAdmin: true,
-	})
-	if db.IsUniqueViolation(err) {
+	user, err := account.New(pool).CreateAdmin(ctx, login, password)
+	if errors.Is(err, account.ErrLoginTaken) {
 		return fmt.Errorf("login %q is already taken", login)
 	}
 	if err != nil {

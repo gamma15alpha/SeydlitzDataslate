@@ -95,6 +95,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Сменить логин
+         * @description Нужен текущий пароль. Сессии не завершаются. Неверный пароль — `403`, не `401`: сессия действительна.
+         *     Неудачные попытки считаются вместе с попытками входа.
+         */
+        put: operations["changeLogin"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Сменить пароль
+         * @description Нужен текущий пароль. Все сессии, кроме текущей, завершаются.
+         *     Неверный пароль — `403`, не `401`: сессия действительна. Неудачные попытки считаются вместе с попытками входа.
+         */
+        put: operations["changePassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites": {
         parameters: {
             query?: never;
@@ -405,6 +447,73 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    changeLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    login: components["schemas"]["Login"];
+                    /** @description Текущий пароль. */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Логин изменён (или совпадал с текущим). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description `invalid_login`. */
+            400: components["responses"]["Error"];
+            /** @description `wrong_password` — неверный текущий пароль. */
+            403: components["responses"]["Error"];
+            /** @description `login_taken`. */
+            409: components["responses"]["Error"];
+            429: components["responses"]["TooManyAttempts"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    currentPassword: string;
+                    newPassword: components["schemas"]["Password"];
+                };
+            };
+        };
+        responses: {
+            /** @description Пароль изменён, остальные сессии завершены. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_password` — новый пароль не подходит по длине. */
+            400: components["responses"]["Error"];
+            /** @description `wrong_password` — неверный текущий пароль. */
+            403: components["responses"]["Error"];
+            429: components["responses"]["TooManyAttempts"];
             "4XX": components["responses"]["Error"];
         };
     };

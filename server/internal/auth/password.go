@@ -1,4 +1,4 @@
-// Package auth — пароли, секреты и лимит неудачных попыток.
+// Package auth — техника: хеши паролей, секреты, лимит неудачных попыток. Правила учётных записей — в account.
 package auth
 
 import (
@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"unicode/utf8"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -65,24 +64,4 @@ var dummyHash = sync.OnceValue(func() string { return HashPassword("dummy passwo
 // VerifyDummy выравнивает время ответа для несуществующего логина.
 func VerifyDummy(password string) {
 	_, _ = VerifyPassword(password, dummyHash())
-}
-
-// ValidateLogin и ValidatePassword возвращают описание ошибки или "".
-func ValidateLogin(login string) string {
-	if len(login) < 3 || len(login) > 32 {
-		return "login must be 3 to 32 characters long"
-	}
-	for _, c := range login {
-		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '.' || c == '-') {
-			return "login may contain only latin letters, digits, '_', '.' and '-'"
-		}
-	}
-	return ""
-}
-
-func ValidatePassword(password string) string {
-	if n := utf8.RuneCountInString(password); n < 8 || n > 128 {
-		return "password must be 8 to 128 characters long"
-	}
-	return ""
 }

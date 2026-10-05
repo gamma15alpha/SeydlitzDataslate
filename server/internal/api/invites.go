@@ -7,13 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
-	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
-)
-
-const (
-	defaultInviteDays = 7
-	maxInviteDays     = 90
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/invite"
 )
 
 type inviteResponse struct {
@@ -25,43 +19,36 @@ type inviteResponse struct {
 	UsedBy    *string    `json:"usedBy,omitempty"`
 }
 
+func toInviteResponse(i invite.Invite, code string) inviteResponse {
+	return inviteResponse{ID: i.ID, Code: code, CreatedAt: i.CreatedAt, ExpiresAt: i.ExpiresAt, UsedAt: i.UsedAt, UsedBy: i.UsedBy}
+}
+
 type createInviteRequest struct {
 	ExpiresInDays int `json:"expiresInDays"`
 }
 
 func (s *server) createInvite(w http.ResponseWriter, r *http.Request) {
-	req := createInviteRequest{ExpiresInDays: defaultInviteDays}
+	req := createInviteRequest{ExpiresInDays: invite.DefaultDays}
 	if r.ContentLength != 0 && !decodeJSON(w, r, &req) {
 		return
 	}
-	if req.ExpiresInDays < 1 || req.ExpiresInDays > maxInviteDays {
-		writeError(w, http.StatusBadRequest, "invalid_expiry", "expiresInDays must be between 1 and 90")
-		return
-	}
-	code, hash := auth.NewSecret()
-	row, err := s.q.CreateInvite(r.Context(), dbq.CreateInviteParams{
-		CodeHash:  hash,
-		CreatedBy: currentSession(r).user.ID,
-		ExpiresAt: time.Now().Add(time.Duration(req.ExpiresInDays) * 24 * time.Hour),
-	})
+	created, code, err := invite.Create(r.Context(), s.q, current(r).user.ID, req.ExpiresInDays)
 	if err != nil {
-		internalError(w, r, err)
+		writeServiceError(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, inviteResponse{ID: row.ID, Code: code, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt})
+	writeJSON(w, http.StatusCreated, toInviteResponse(created, code))
 }
 
 func (s *server) listInvites(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.q.ListInvites(r.Context())
+	list, err := invite.List(r.Context(), s.q)
 	if err != nil {
 		internalError(w, r, err)
 		return
 	}
-	invites := make([]inviteResponse, 0, len(rows))
-	for _, row := range rows {
-		invites = append(invites, inviteResponse{
-			ID: row.ID, CreatedAt: row.CreatedAt, ExpiresAt: row.ExpiresAt, UsedAt: row.UsedAt, UsedBy: row.UsedByLogin,
-		})
+	invites := make([]inviteResponse, 0, len(list))
+	for _, i := range list {
+		invites = append(invites, toInviteResponse(i, ""))
 	}
 	writeJSON(w, http.StatusOK, invites)
 }
@@ -72,13 +59,8 @@ func (s *server) deleteInvite(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "invite not found")
 		return
 	}
-	n, err := s.q.DeleteUnusedInvite(r.Context(), id)
-	if err != nil {
-		internalError(w, r, err)
-		return
-	}
-	if n == 0 {
-		writeError(w, http.StatusNotFound, "not_found", "invite not found or already used")
+	if err := invite.Revoke(r.Context(), s.q, id); err != nil {
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

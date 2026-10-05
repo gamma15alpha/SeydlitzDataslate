@@ -111,5 +111,5 @@ func ipKey(r *http.Request) string {
 }
 
 func userKey(r *http.Request) string {
-	return currentSession(r).user.ID.String()
+	return current(r).user.ID.String()
 }

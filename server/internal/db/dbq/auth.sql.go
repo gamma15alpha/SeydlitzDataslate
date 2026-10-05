@@ -411,3 +411,41 @@ func (q *Queries) TouchSession(ctx context.Context, arg TouchSessionParams) erro
 	_, err := q.db.Exec(ctx, touchSession, arg.ExpiresAt, arg.ID)
 	return err
 }
+
+const updateUserLogin = `-- name: UpdateUserLogin :one
+UPDATE users SET login = $1 WHERE id = $2
+RETURNING id, login, display_name, password_hash, is_admin, created_at
+`
+
+type UpdateUserLoginParams struct {
+	Login string
+	ID    uuid.UUID
+}
+
+func (q *Queries) UpdateUserLogin(ctx context.Context, arg UpdateUserLoginParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserLogin, arg.Login, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Login,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.IsAdmin,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = $1 WHERE id = $2
+`
+
+type UpdateUserPasswordParams struct {
+	PasswordHash string
+	ID           uuid.UUID
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.PasswordHash, arg.ID)
+	return err
+}

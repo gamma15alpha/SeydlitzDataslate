@@ -149,6 +149,82 @@ paths:
         "4XX":
           $ref: "#/components/responses/Error"
 
+  /api/me/login:
+    put:
+      operationId: changeLogin
+      summary: Сменить логин
+      description: |
+        Нужен текущий пароль. Сессии не завершаются. Неверный пароль — `403`, не `401`: сессия действительна.
+        Неудачные попытки считаются вместе с попытками входа.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login:
+                  $ref: "#/components/schemas/Login"
+                password:
+                  type: string
+                  description: Текущий пароль.
+      responses:
+        "200":
+          description: Логин изменён (или совпадал с текущим).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_login`."
+        "403":
+          $ref: "#/components/responses/Error"
+          description: "`wrong_password` — неверный текущий пароль."
+        "409":
+          $ref: "#/components/responses/Error"
+          description: "`login_taken`."
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/me/password:
+    put:
+      operationId: changePassword
+      summary: Сменить пароль
+      description: |
+        Нужен текущий пароль. Все сессии, кроме текущей, завершаются.
+        Неверный пароль — `403`, не `401`: сессия действительна. Неудачные попытки считаются вместе с попытками входа.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  $ref: "#/components/schemas/Password"
+      responses:
+        "204":
+          description: Пароль изменён, остальные сессии завершены.
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_password` — новый пароль не подходит по длине."
+        "403":
+          $ref: "#/components/responses/Error"
+          description: "`wrong_password` — неверный текущий пароль."
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
   /api/invites:
     get:
       operationId: listInvites

@@ -1,17 +1,17 @@
 // Package api — HTTP API сервера; контракт — schemas/openapi.yaml.
+// Только перевод между HTTP и сценариями (account, session, invite): разбор запроса, вызов, ошибка → статус и код.
 package api
 
 import (
 	"cmp"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 )
 
@@ -29,21 +29,13 @@ type Config struct {
 }
 
 type server struct {
-	pool *pgxpool.Pool
-	q    *dbq.Queries
-	// Неудачные попытки: по IP и по логину (перебор пароля с разных адресов).
-	ipLimiter    *auth.Limiter
-	loginLimiter *auth.Limiter
+	q        *dbq.Queries
+	accounts *account.Service
 }
 
 // Все маршруты под /api/: веб и API на одном домене, без CORS.
 func NewHandler(cfg Config) http.Handler {
-	s := &server{
-		pool:         cfg.Pool,
-		q:            dbq.New(cfg.Pool),
-		ipLimiter:    auth.NewLimiter(30, 15*time.Minute),
-		loginLimiter: auth.NewLimiter(10, 15*time.Minute),
-	}
+	s := &server{q: dbq.New(cfg.Pool), accounts: account.New(cfg.Pool)}
 
 	r := chi.NewRouter()
 	if cfg.TrustProxy {
@@ -70,6 +62,8 @@ func NewHandler(cfg Config) http.Handler {
 			r.Use(rateLimit(cmp.Or(cfg.UserRequestsPerMinute, 300), userKey))
 			r.Post("/auth/logout", s.logout)
 			r.Get("/me", s.me)
+			r.Put("/me/login", s.changeLogin)
+			r.Put("/me/password", s.changePassword)
 			r.Get("/sessions", s.listSessions)
 			r.Delete("/sessions", s.deleteOtherSessions)
 			r.Delete("/sessions/{id}", s.deleteSession)
