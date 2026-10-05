@@ -4,12 +4,12 @@ Kotlin + Jetpack Compose (Material 3). Сеть — Ktor Client (движок Ok
 
 ## Сборка
 
-Нужен **JDK 21** — на более новых версиях Java Gradle и Android Gradle Plugin могут не запуститься.
+Нужен установленный **JDK 21**: на более новых версиях Java Gradle и Android Gradle Plugin могут не запуститься. Демон Gradle закреплён на 21 (`gradle/gradle-daemon-jvm.properties`) — Gradle находит JDK сам, `JAVA_HOME` можно не задавать. Скачивать JDK он не умеет (репозитории toolchain не настроены): нет 21 — сборка остановится с ошибкой.
 
 ```
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug    # app/build/outputs/apk/debug/app-debug.apk
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew installDebug     # установить на подключённое устройство
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew testDebugUnitTest
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug         # установить на подключённое устройство
+./gradlew testDebugUnitTest
 ```
 
 Адрес сервера — gradle-свойство `dataslate.apiUrl` (`-Pdataslate.apiUrl=…` или `gradle.properties`). Debug по умолчанию ходит на `http://10.0.2.2:8090/` — компьютер разработчика из эмулятора; HTTP без TLS разрешён только в debug и только к нему. На телефоне по USB: `adb reverse tcp:8090 tcp:8090` и `-Pdataslate.apiUrl=http://127.0.0.1:8090/`. Release без адреса не собирается.
