@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ public: true })
-useHead({ title: 'Вход — Seydlitz Dataslate' })
+const { t } = useI18n()
+useHead({ title: () => t('auth.loginTitle') })
 
 const auth = useAuth()
 const route = useRoute()
@@ -17,18 +18,19 @@ async function submit() {
 </script>
 
 <template>
-  <AuthPanel title="Вход" submit-label="Войти" :error="error" :busy="busy" @submit="submit">
-    <p v-if="auth.notice.value" class="warning" role="status">{{ auth.notice.value }}</p>
+  <LocaleSwitch />
+  <AuthPanel :title="t('auth.loginTitle')" :submit-label="t('auth.loginSubmit')" :error="error" :busy="busy" @submit="submit">
+    <p v-if="auth.notice.value" class="warning" role="status">{{ t(auth.notice.value) }}</p>
     <label>
-      Логин
+      {{ t('auth.login') }}
       <input v-model="form.login" name="username" autocomplete="username" required autofocus>
     </label>
     <label>
-      Пароль
+      {{ t('auth.password') }}
       <input v-model="form.password" type="password" name="password" autocomplete="current-password" required>
     </label>
     <template #footer>
-      Нет аккаунта? Регистрация — по инвайту от администратора.
+      {{ t('auth.loginFooter') }}
     </template>
   </AuthPanel>
 </template>

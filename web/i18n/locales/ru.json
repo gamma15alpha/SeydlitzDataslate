@@ -1,0 +1,69 @@
+{
+  "app": {
+    "title": "Seydlitz Dataslate",
+    "pageTitle": "{page} — Seydlitz Dataslate"
+  },
+  "auth": {
+    "login": "Логин",
+    "password": "Пароль",
+    "loginTitle": "Вход",
+    "loginSubmit": "Войти",
+    "loginFooter": "Нет аккаунта? Регистрация — по инвайту от администратора.",
+    "registerTitle": "Регистрация",
+    "registerSubmit": "Зарегистрироваться",
+    "invite": "Инвайт",
+    "loginHint": "Латиница, цифры, «_», «.», «-»",
+    "displayName": "Имя",
+    "displayNameHint": "— необязательно, по умолчанию логин",
+    "passwordRepeat": "Пароль ещё раз",
+    "passwordsMismatch": "Пароли не совпадают",
+    "haveAccount": "Уже есть аккаунт?",
+    "offline": "Нет связи с сервером — работа офлайн",
+    "logout": "Выйти",
+    "revoked": "Сессия завершена: вход с этой сессией выполнен с другого устройства. Войдите снова и проверьте активные сессии."
+  },
+  "sessions": {
+    "link": "Активные сессии",
+    "title": "Сессии",
+    "thisDevice": "— это устройство",
+    "dates": "вход {created} · активность {used}",
+    "end": "Завершить",
+    "endOthers": "Выйти на всех остальных устройствах",
+    "back": "Назад",
+    "loadFailed": "Не удалось загрузить сессии",
+    "androidApp": "Android-приложение",
+    "unknownDevice": "Неизвестное устройство"
+  },
+  "demo": {
+    "link": "Демо-анкета",
+    "title": "Демо-анкета",
+    "player": "Игрок",
+    "homeworld": "Родной мир",
+    "career": "Карьера",
+    "rank": "Ранг",
+    "characteristics": "Характеристики",
+    "skills": "Навыки",
+    "training": "+{n}",
+    "trained": "обучен",
+    "contentLang": "Язык контента",
+    "contentLangUi": "как интерфейс",
+    "original": "Оригинал",
+    "back": "Назад",
+    "close": "Закрыть",
+    "notFound": "Запись не найдена: {ref}"
+  },
+  "errors": {
+    "noConnection": "Нет связи с сервером",
+    "server": "Ошибка сервера {status}",
+    "serverWithId": "Ошибка сервера {status}, код запроса {id}",
+    "tooMany": "Слишком много попыток. Повторите через {time}",
+    "seconds": "{n} с",
+    "minutes": "{n} мин",
+    "invalid_credentials": "Неверный логин или пароль",
+    "invalid_invite": "Инвайт недействителен, истёк или уже использован",
+    "login_taken": "Логин уже занят",
+    "invalid_login": "Логин: от 3 до 32 символов — латиница, цифры, «_», «.», «-»",
+    "invalid_password": "Пароль: от 8 до 128 символов",
+    "invalid_display_name": "Имя — не длиннее 64 символов"
+  }
+}

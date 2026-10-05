@@ -8,9 +8,12 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "api:types": "openapi-typescript ../schemas/openapi.yaml -o app/api/schema.d.ts",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@nuxtjs/i18n": "^10.6.0",
+    "markdown-it": "^15.0.2",
     "nuxt": "^4.5.2",
     "openapi-fetch": "^0.17.0",
     "vue": "^3.5.43",
@@ -18,8 +21,11 @@
   },
   "packageManager": "yarn@4.18.1",
   "devDependencies": {
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^26.6.4",
     "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.3",
+    "vitest": "^5.0.3",
     "vue-tsc": "^3.3.12"
   }
 }

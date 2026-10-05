@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ public: true })
-useHead({ title: 'Регистрация — Seydlitz Dataslate' })
+const { t } = useI18n()
+useHead({ title: () => t('auth.registerTitle') })
 
 const auth = useAuth()
 const route = useRoute()
@@ -17,7 +18,7 @@ const busy = ref(false)
 
 async function submit() {
   if (form.password !== form.repeat) {
-    error.value = 'Пароли не совпадают'
+    error.value = t('auth.passwordsMismatch')
     return
   }
   busy.value = true
@@ -33,33 +34,33 @@ async function submit() {
 </script>
 
 <template>
-  <AuthPanel title="Регистрация" submit-label="Зарегистрироваться" :error="error" :busy="busy" @submit="submit">
+  <AuthPanel :title="t('auth.registerTitle')" :submit-label="t('auth.registerSubmit')" :error="error" :busy="busy" @submit="submit">
     <label>
-      Инвайт
+      {{ t('auth.invite') }}
       <input v-model="form.invite" autocomplete="off" spellcheck="false" required>
     </label>
     <label>
-      Логин
+      {{ t('auth.login') }}
       <input
         v-model="form.login" name="username" autocomplete="username" required
         minlength="3" maxlength="32" pattern="[A-Za-z0-9_.\-]+"
-        title="Латиница, цифры, «_», «.», «-»"
+        :title="t('auth.loginHint')"
       >
     </label>
     <label>
-      Имя <span class="muted">— необязательно, по умолчанию логин</span>
+      {{ t('auth.displayName') }} <span class="muted">{{ t('auth.displayNameHint') }}</span>
       <input v-model="form.displayName" name="nickname" autocomplete="nickname" maxlength="64">
     </label>
     <label>
-      Пароль
+      {{ t('auth.password') }}
       <input v-model="form.password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
     </label>
     <label>
-      Пароль ещё раз
+      {{ t('auth.passwordRepeat') }}
       <input v-model="form.repeat" type="password" autocomplete="new-password" required>
     </label>
     <template #footer>
-      Уже есть аккаунт? <NuxtLink to="/login">Войти</NuxtLink>
+      {{ t('auth.haveAccount') }} <NuxtLink to="/login">{{ t('auth.loginSubmit') }}</NuxtLink>
     </template>
   </AuthPanel>
 </template>

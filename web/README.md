@@ -10,6 +10,7 @@ yarn dev          # http://localhost:3000; /api проксируется на с
 yarn build        # статика в .output/public
 yarn preview
 yarn typecheck
+yarn test         # vitest: test/*.test.ts
 yarn api:types    # после изменения schemas/openapi.yaml
 ```
 
@@ -22,6 +23,7 @@ yarn api:types    # после изменения schemas/openapi.yaml
 - `app/middleware/auth.global.ts` — без входа доступны только страницы с `definePageMeta({ public: true })`.
 - `app/plugins/session-expiry.ts` — на 401 посреди работы отправляет на вход с возвратом на текущую страницу.
 - Регистрация по ссылке `/register?invite=КОД`; `/sessions` — активные сессии. Ротацию токена браузер обрабатывает сам (cookie).
+- `i18n/locales/` — тексты интерфейса, `ru` и `en` ([@nuxtjs/i18n](https://i18n.nuxtjs.org)). Язык — из браузера при первом входе (английский, иначе русский), дальше — из cookie `lang`.
 - `public/fonts/` — PT Mono и Forum с текстами лицензий SIL OFL.
 - `.yarnrc.yml` — `nodeLinker: node-modules` (у части инструментов экосистемы Nuxt бывают проблемы с режимом Plug'n'Play).
 

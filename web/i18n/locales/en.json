@@ -1,0 +1,69 @@
+{
+  "app": {
+    "title": "Seydlitz Dataslate",
+    "pageTitle": "{page} — Seydlitz Dataslate"
+  },
+  "auth": {
+    "login": "Login",
+    "password": "Password",
+    "loginTitle": "Sign in",
+    "loginSubmit": "Sign in",
+    "loginFooter": "No account? Registration is by invite from the administrator.",
+    "registerTitle": "Registration",
+    "registerSubmit": "Register",
+    "invite": "Invite",
+    "loginHint": "Latin letters, digits, “_”, “.”, “-”",
+    "displayName": "Name",
+    "displayNameHint": "— optional, defaults to the login",
+    "passwordRepeat": "Repeat password",
+    "passwordsMismatch": "Passwords do not match",
+    "haveAccount": "Already have an account?",
+    "offline": "No connection to the server — working offline",
+    "logout": "Sign out",
+    "revoked": "Session ended: it was used from another device. Sign in again and check your active sessions."
+  },
+  "sessions": {
+    "link": "Active sessions",
+    "title": "Sessions",
+    "thisDevice": "— this device",
+    "dates": "signed in {created} · active {used}",
+    "end": "End",
+    "endOthers": "Sign out on all other devices",
+    "back": "Back",
+    "loadFailed": "Could not load sessions",
+    "androidApp": "Android app",
+    "unknownDevice": "Unknown device"
+  },
+  "demo": {
+    "link": "Demo sheet",
+    "title": "Demo sheet",
+    "player": "Player",
+    "homeworld": "Home world",
+    "career": "Career",
+    "rank": "Rank",
+    "characteristics": "Characteristics",
+    "skills": "Skills",
+    "training": "+{n}",
+    "trained": "trained",
+    "contentLang": "Content language",
+    "contentLangUi": "same as interface",
+    "original": "Original",
+    "back": "Back",
+    "close": "Close",
+    "notFound": "Entry not found: {ref}"
+  },
+  "errors": {
+    "noConnection": "No connection to the server",
+    "server": "Server error {status}",
+    "serverWithId": "Server error {status}, request ID {id}",
+    "tooMany": "Too many attempts. Try again in {time}",
+    "seconds": "{n} s",
+    "minutes": "{n} min",
+    "invalid_credentials": "Wrong login or password",
+    "invalid_invite": "The invite is invalid, expired or already used",
+    "login_taken": "This login is already taken",
+    "invalid_login": "Login: 3 to 32 characters — Latin letters, digits, “_”, “.”, “-”",
+    "invalid_password": "Password: 8 to 128 characters",
+    "invalid_display_name": "Name: at most 64 characters"
+  }
+}
