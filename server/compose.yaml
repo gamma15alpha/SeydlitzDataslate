@@ -1,0 +1,19 @@
+# PostgreSQL для разработки и тестов: docker compose up -d
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: dataslate
+      POSTGRES_PASSWORD: dataslate
+      POSTGRES_DB: dataslate
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "dataslate"]
+      interval: 2s
+      retries: 15
+
+volumes:
+  pgdata:

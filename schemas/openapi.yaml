@@ -1,0 +1,340 @@
+openapi: 3.1.0
+info:
+  title: Seydlitz Dataslate API
+  description: |
+    API сервера: синхронизация персонажей и раздача пакетов контента.
+    Форматы данных — JSON Schema в этой же папке; здесь на них ссылаются через $ref.
+
+    Авторизация — токен сессии: веб получает его в HttpOnly-cookie `session`,
+    Android — в теле ответа на вход и передаёт в `Authorization: Bearer …`.
+    Запросы с телом — только `Content-Type: application/json`.
+  version: 0.1.0
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /
+    description: Тот же домен, что и веб-сборка (за обратным прокси).
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Проверка работоспособности
+      tags: [service]
+      security: []  # публичный маршрут
+      responses:
+        "200":
+          description: Сервер работает.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/auth/register:
+    post:
+      operationId: register
+      summary: Регистрация по инвайту
+      description: Создаёт пользователя и сразу открывает сессию. Инвайт одноразовый.
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invite, login, password]
+              properties:
+                invite:
+                  type: string
+                  description: Код инвайта; регистр и пробелы по краям не важны.
+                login:
+                  $ref: "#/components/schemas/Login"
+                password:
+                  $ref: "#/components/schemas/Password"
+                displayName:
+                  type: string
+                  maxLength: 64
+                  description: Отображаемое имя; по умолчанию — логин.
+      responses:
+        "201":
+          $ref: "#/components/responses/Session"
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_invite`, `invalid_login`, `invalid_password`, `invalid_display_name`, `bad_request`."
+        "409":
+          $ref: "#/components/responses/Error"
+          description: "`login_taken`. Инвайт при этом не расходуется."
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: Вход
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login:
+                  type: string
+                  description: Без учёта регистра.
+                password:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/Session"
+        "401":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_credentials` — неверный логин или пароль (что именно — не уточняется)."
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: Выход
+      description: Закрывает текущую сессию и удаляет cookie.
+      tags: [auth]
+      responses:
+        "204":
+          description: Сессия закрыта.
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/me:
+    get:
+      operationId: getMe
+      summary: Текущий пользователь
+      tags: [auth]
+      responses:
+        "200":
+          description: Пользователь текущей сессии.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/invites:
+    get:
+      operationId: listInvites
+      summary: Список инвайтов
+      description: Только для администратора. Коды не возвращаются — сервер хранит лишь их хеши.
+      tags: [invites]
+      responses:
+        "200":
+          description: Инвайты, новые первыми.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invite"
+        "4XX":
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: createInvite
+      summary: Создать инвайт
+      description: Только для администратора. Код возвращается один раз — в этом ответе.
+      tags: [invites]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresInDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 90
+                  default: 7
+      responses:
+        "201":
+          description: Инвайт создан.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Invite"
+                  - required: [code]
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_expiry`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/invites/{id}:
+    delete:
+      operationId: deleteInvite
+      summary: Отозвать инвайт
+      description: Только для администратора и только неиспользованный инвайт.
+      tags: [invites]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Инвайт удалён.
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found` — нет такого или уже использован."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Веб. Cookie ставит сервер при входе и регистрации (HttpOnly, Secure, SameSite=Lax).
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Android. Токен — поле `token` ответа на вход или регистрацию.
+
+  schemas:
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          const: ok
+        version:
+          type: string
+          description: Версия сборки сервера; "dev" — собран без -ldflags.
+          examples: ["0.1.0"]
+
+    Login:
+      type: string
+      pattern: "^[A-Za-z0-9_.-]{3,32}$"
+      description: Уникален без учёта регистра.
+
+    Password:
+      type: string
+      minLength: 8
+      maxLength: 128
+
+    User:
+      type: object
+      required: [id, login, displayName, isAdmin, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        login:
+          $ref: "#/components/schemas/Login"
+        displayName:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Invite:
+      type: object
+      required: [id, createdAt, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          description: Только в ответе на создание.
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          description: Нет поля — инвайт не использован.
+        usedBy:
+          type: string
+          description: Логин зарегистрировавшегося (нет поля, если пользователь удалён).
+
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Описание ошибки для человека.
+          examples: ["Not Found"]
+        code:
+          type: string
+          description: |
+            Машиночитаемый код. Общие: `bad_request`, `too_large`, `unsupported_media_type`, `unauthorized`,
+            `forbidden`, `not_found`, `method_not_allowed`, `too_many_attempts`, `internal`;
+            остальные — в описаниях ответов конкретных операций.
+          examples: ["not_found"]
+
+  responses:
+    Error:
+      description: Ошибка. Для 405 — заголовок Allow.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    TooManyAttempts:
+      description: "`too_many_attempts` — слишком много неудачных попыток с этого адреса или для этого логина."
+      headers:
+        Retry-After:
+          description: Через сколько секунд можно повторить.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Session:
+      description: Сессия открыта; токен также установлен в cookie `session`.
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token, user]
+            properties:
+              token:
+                type: string
+              user:
+                $ref: "#/components/schemas/User"
+
+tags:
+  - name: service
+    description: Служебные маршруты.
+  - name: auth
+    description: Регистрация, вход, сессии.
+  - name: invites
+    description: Инвайты на регистрацию (только администратор).
