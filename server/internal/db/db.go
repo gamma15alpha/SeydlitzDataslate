@@ -77,7 +77,7 @@ func logQuery(ctx context.Context, _ tracelog.LogLevel, msg string, data map[str
 	if msg == "Prepare" && data["err"] == nil {
 		return // раз на соединение — шум
 	}
-	attrs := []slog.Attr{}
+	var attrs []slog.Attr
 	if sql, ok := data["sql"].(string); ok {
 		attrs = append(attrs, slog.String("query", queryName(sql)))
 	}
