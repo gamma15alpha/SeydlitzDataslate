@@ -7,8 +7,10 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 
 // Офлайн пускаем по последнему известному пользователю; выкидывает только 401 от сервера.
 const CACHE_KEY = 'dataslate:user'
+const RESTORE_TIMEOUT_MS = 5000
 
 let restoring: Promise<void> | undefined
+let refreshing: Promise<void> | undefined
 
 export function useAuth() {
   const user = useState<User | null>('auth:user', () => null)
@@ -31,7 +33,9 @@ export function useAuth() {
 
   async function load() {
     try {
-      const { data, error, response } = await api.GET('/api/me')
+      // Middleware ждёт этот запрос до первой страницы: без таймаута зависший сервер или прокси
+      // оставляет пустой экран. Не дождались — как офлайн.
+      const { data, error, response } = await api.GET('/api/me', { signal: AbortSignal.timeout(RESTORE_TIMEOUT_MS) })
       offline.value = false
       if (data) setUser(data)
       else if (response.status === 401) {
@@ -48,6 +52,11 @@ export function useAuth() {
 
   function restore() {
     return (restoring ??= load())
+  }
+
+  // Повторная проверка сессии — например, когда связь с сервером вернулась после работы офлайн.
+  function refresh() {
+    return (refreshing ??= load().finally(() => (refreshing = undefined)))
   }
 
   async function submit(call: () => Promise<{ data?: { user: User }; error?: ApiError; response: Response }>) {
@@ -85,7 +94,7 @@ export function useAuth() {
     return null
   }
 
-  return { user, offline, ready, notice, restore, login, register, logout, forget: () => setUser(null) }
+  return { user, offline, ready, notice, restore, refresh, login, register, logout, forget: () => setUser(null) }
 }
 
 const knownCodes = new Set(['invalid_credentials', 'invalid_invite', 'login_taken', 'invalid_login', 'invalid_password', 'invalid_display_name'])
