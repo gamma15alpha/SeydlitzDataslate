@@ -13,8 +13,6 @@ import (
 
 const specPath = "../../../schemas/openapi.yaml"
 
-// TestRoutesMatchSpec — маршруты сервера и schemas/openapi.yaml должны совпадать
-// в обе стороны: ни недокументированных маршрутов, ни описанных, но не реализованных.
 func TestRoutesMatchSpec(t *testing.T) {
 	raw, err := os.ReadFile(specPath)
 	if err != nil {

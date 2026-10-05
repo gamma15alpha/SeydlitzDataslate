@@ -27,7 +27,7 @@ func toUserResponse(u dbq.User) userResponse {
 	return userResponse{ID: u.ID, Login: u.Login, DisplayName: u.DisplayName, IsAdmin: u.IsAdmin, CreatedAt: u.CreatedAt}
 }
 
-// sessionResponse — токен в теле нужен Android-клиенту; веб пользуется cookie.
+// Token — для Android; веб использует cookie.
 type sessionResponse struct {
 	Token string       `json:"token"`
 	User  userResponse `json:"user"`
@@ -45,7 +45,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	ipKey := clientIP(r)
+	ipKey := ipKey(r)
 	if limited(w, func() (bool, time.Duration) { return s.ipLimiter.Blocked(ipKey) }) {
 		return
 	}
@@ -67,7 +67,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_display_name", "display name must be at most 64 characters long")
 		return
 	}
-	passwordHash := auth.HashPassword(req.Password) // до транзакции: хеширование медленное
+	passwordHash := auth.HashPassword(req.Password) // до транзакции: argon2 медленный
 
 	ctx := r.Context()
 	tx, err := s.pool.Begin(ctx)
@@ -126,7 +126,7 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	ipKey := clientIP(r)
+	ipKey := ipKey(r)
 	loginKey := strings.ToLower(strings.TrimSpace(req.Login))
 	if limited(w,
 		func() (bool, time.Duration) { return s.ipLimiter.Blocked(ipKey) },

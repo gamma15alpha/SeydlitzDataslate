@@ -1,7 +1,4 @@
-// Package dbtest даёт тестам чистую базу с применёнными миграциями.
-//
-// Нужен PostgreSQL (docker compose up -d) и переменная TEST_DATABASE_URL, например
-// postgres://dataslate:dataslate@127.0.0.1:5432/dataslate. Без неё тесты с базой пропускаются.
+// Package dbtest даёт тесту отдельную базу; без TEST_DATABASE_URL тест пропускается.
 package dbtest
 
 import (
@@ -17,8 +14,6 @@ import (
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db"
 )
 
-// New создаёт отдельную базу на каждый тест (тесты не мешают друг другу и могут
-// идти параллельно) и удаляет её по окончании.
 func New(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")

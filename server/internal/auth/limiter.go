@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-// Limiter считает неудачные попытки по ключу (IP, логин) в фиксированном окне.
-// Хранится в памяти: сервер один, после перезапуска счётчики обнуляются — это допустимо.
+// Limiter считает неудачные попытки по ключу в фиксированном окне; счётчики в памяти.
 type Limiter struct {
 	max    int
 	window time.Duration
@@ -21,12 +20,11 @@ type limiterEntry struct {
 	start time.Time
 }
 
-// NewLimiter разрешает не больше max неудач за window.
 func NewLimiter(max int, window time.Duration) *Limiter {
 	return &Limiter{max: max, window: window, now: time.Now, entries: map[string]limiterEntry{}}
 }
 
-// Blocked сообщает, исчерпан ли лимит по ключу, и через сколько он сбросится.
+// Blocked также возвращает время до сброса.
 func (l *Limiter) Blocked(key string) (bool, time.Duration) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -42,7 +40,6 @@ func (l *Limiter) Blocked(key string) (bool, time.Duration) {
 	return e.count >= l.max, left
 }
 
-// Fail засчитывает неудачную попытку.
 func (l *Limiter) Fail(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -58,7 +55,6 @@ func (l *Limiter) Fail(key string) {
 	l.entries[key] = e
 }
 
-// Reset сбрасывает счётчик, например после успешного входа.
 func (l *Limiter) Reset(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()

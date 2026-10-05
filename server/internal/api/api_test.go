@@ -51,7 +51,6 @@ func TestHealthRejectsPost(t *testing.T) {
 	assertJSONError(t, rec, "method_not_allowed")
 }
 
-// assertJSONError проверяет, что ответ — JSON-ошибка с машиночитаемым кодом code.
 func assertJSONError(t *testing.T, rec *httptest.ResponseRecorder, code string) {
 	t.Helper()
 	if ct := rec.Header().Get("Content-Type"); ct != jsonContentType {

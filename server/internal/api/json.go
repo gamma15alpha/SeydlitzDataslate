@@ -14,8 +14,7 @@ const maxBodyBytes = 64 << 10
 
 type errorResponse struct {
 	Error string `json:"error"`
-	// Code — машиночитаемый код для клиентов (login_taken, invalid_invite, …); список — в спецификации.
-	Code string `json:"code"`
+	Code  string `json:"code"`
 }
 
 func writeError(w http.ResponseWriter, status int, code, msg string) {
@@ -23,7 +22,7 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 }
 
 func internalError(w http.ResponseWriter, r *http.Request, err error) {
-	slog.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
+	slog.ErrorContext(r.Context(), "request failed", "err", err)
 	writeError(w, http.StatusInternalServerError, "internal", "Internal Server Error")
 }
 
@@ -33,9 +32,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
-// decodeJSON читает тело запроса в dst; при ошибке сам пишет ответ и возвращает false.
-// Требование Content-Type: application/json — заодно защита от CSRF: обычная HTML-форма
-// с чужого сайта такой запрос отправить не может.
+// decodeJSON при ошибке сам пишет ответ. Требование application/json заодно защищает от CSRF через HTML-формы.
 func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	if mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); mt != "application/json" {
 		writeError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type must be application/json")
@@ -51,7 +48,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 		writeError(w, http.StatusBadRequest, "bad_request", "read body: "+err.Error())
 		return false
 	}
-	// encoding/json молча заменяет битые байты на U+FFFD — такой мусор не должен попасть в базу.
+	// encoding/json молча заменил бы битые байты на U+FFFD.
 	if !utf8.Valid(body) {
 		writeError(w, http.StatusBadRequest, "bad_request", "request body is not valid UTF-8")
 		return false

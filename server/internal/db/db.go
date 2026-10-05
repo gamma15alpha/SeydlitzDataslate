@@ -1,7 +1,4 @@
-// Package db — подключение к PostgreSQL и миграции.
-//
-// Миграции (goose) встроены в бинарник и применяются при старте. Запросы — в queries/,
-// Go-код к ним генерирует sqlc в пакет dbq: go tool -modfile=tools.mod sqlc generate.
+// Package db — подключение к PostgreSQL и встроенные миграции goose.
 package db
 
 import (
@@ -10,18 +7,21 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-// Open подключается к базе по URL вида postgres://user:pass@host:5432/db
-// и применяет недостающие миграции.
+// Open подключается и применяет миграции.
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
@@ -30,8 +30,10 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return OpenConfig(ctx, cfg)
 }
 
-// OpenConfig — то же, что Open, но с готовой конфигурацией пула.
 func OpenConfig(ctx context.Context, cfg *pgxpool.Config) (*pgxpool.Pool, error) {
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		cfg.ConnConfig.Tracer = &tracelog.TraceLog{Logger: tracelog.LoggerFunc(logQuery), LogLevel: tracelog.LogLevelInfo}
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("connect: %w", err)
@@ -65,8 +67,37 @@ func migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	return nil
 }
 
-// IsUniqueViolation — ошибка нарушения уникального ограничения (например, логин занят).
 func IsUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+// logQuery не пишет аргументы: в них хеши паролей и токенов.
+func logQuery(ctx context.Context, _ tracelog.LogLevel, msg string, data map[string]any) {
+	if msg == "Prepare" && data["err"] == nil {
+		return // раз на соединение — шум
+	}
+	attrs := []slog.Attr{}
+	if sql, ok := data["sql"].(string); ok {
+		attrs = append(attrs, slog.String("query", queryName(sql)))
+	}
+	if d, ok := data["time"].(time.Duration); ok {
+		attrs = append(attrs, slog.Float64("duration_ms", float64(d.Microseconds())/1000))
+	}
+	if tag, ok := data["commandTag"].(string); ok {
+		attrs = append(attrs, slog.String("tag", tag))
+	}
+	if err, ok := data["err"].(error); ok {
+		attrs = append(attrs, slog.String("err", err.Error()))
+	}
+	slog.LogAttrs(ctx, slog.LevelDebug, "db "+strings.ToLower(msg), attrs...)
+}
+
+// queryName — имя запроса sqlc или SQL в одну строку.
+func queryName(sql string) string {
+	if rest, ok := strings.CutPrefix(sql, "-- name: "); ok {
+		name, _, _ := strings.Cut(rest, " ")
+		return name
+	}
+	return strings.Join(strings.Fields(sql), " ")
 }

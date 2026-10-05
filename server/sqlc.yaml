@@ -1,4 +1,3 @@
-# Генерация: go tool -modfile=tools.mod sqlc generate
 version: "2"
 sql:
   - engine: postgresql

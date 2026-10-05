@@ -18,7 +18,7 @@ WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now()
 RETURNING id
 `
 
-// Занимает инвайт; вызывать в транзакции вместе с созданием пользователя.
+// Вызывать в одной транзакции с CreateUser.
 func (q *Queries) ClaimInvite(ctx context.Context, codeHash []byte) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, claimInvite, codeHash)
 	var id uuid.UUID
@@ -130,7 +130,7 @@ const deleteUnusedInvite = `-- name: DeleteUnusedInvite :execrows
 DELETE FROM invites WHERE id = $1 AND used_at IS NULL
 `
 
-// Использованные инвайты не удаляются: они — история, кто кого пригласил.
+// Использованные остаются как история.
 func (q *Queries) DeleteUnusedInvite(ctx context.Context, id uuid.UUID) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteUnusedInvite, id)
 	if err != nil {

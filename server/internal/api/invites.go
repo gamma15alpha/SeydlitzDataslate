@@ -18,7 +18,7 @@ const (
 
 type inviteResponse struct {
 	ID        uuid.UUID  `json:"id"`
-	Code      string     `json:"code,omitempty"` // только в ответе на создание: в базе кода нет
+	Code      string     `json:"code,omitempty"` // только при создании
 	CreatedAt time.Time  `json:"createdAt"`
 	ExpiresAt time.Time  `json:"expiresAt"`
 	UsedAt    *time.Time `json:"usedAt,omitempty"`

@@ -1,11 +1,8 @@
-// Package api — HTTP API сервера Seydlitz Dataslate.
-//
-// Сервер отвечает за синхронизацию персонажей и раздачу пакетов контента.
-// Контракт — schemas/openapi.yaml (OpenAPI 3.1, ссылается на JSON Schema из той же папки);
-// тест проверяет, что маршруты здесь и в спецификации совпадают.
+// Package api — HTTP API сервера; контракт — schemas/openapi.yaml.
 package api
 
 import (
+	"cmp"
 	"net/http"
 	"strings"
 	"time"
@@ -18,28 +15,28 @@ import (
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 )
 
-// Version — версия сервера; задаётся при сборке: -ldflags "-X .../internal/api.Version=1.2.3".
+// Version задаётся при сборке через -ldflags -X.
 var Version = "dev"
 
-// Config — зависимости и настройки API.
 type Config struct {
 	Pool *pgxpool.Pool
-	// TrustProxy — брать IP клиента из X-Real-IP / X-Forwarded-For. Включать, только если
-	// сервер доступен исключительно через обратный прокси, который эти заголовки выставляет.
+	// TrustProxy: доверять X-Real-IP, X-Forwarded-For и X-Request-ID — только за прокси, который их перезаписывает.
 	TrustProxy bool
+
+	// Запросов в минуту, 0 — по умолчанию (600 и 300). По IP с запасом: игроки за одним столом часто за общим NAT.
+	IPRequestsPerMinute   int
+	UserRequestsPerMinute int
 }
 
 type server struct {
 	pool *pgxpool.Pool
 	q    *dbq.Queries
-	// Неудачные попытки входа и регистрации: по IP — против перебора вообще,
-	// по логину — против перебора пароля одного пользователя с разных адресов.
+	// Неудачные попытки: по IP и по логину (перебор пароля с разных адресов).
 	ipLimiter    *auth.Limiter
 	loginLimiter *auth.Limiter
 }
 
-// NewHandler собирает маршруты API. Все маршруты — под /api/, чтобы обратный прокси
-// отдавал веб-сборку и API с одного домена (без CORS).
+// Все маршруты под /api/: веб и API на одном домене, без CORS.
 func NewHandler(cfg Config) http.Handler {
 	s := &server{
 		pool:         cfg.Pool,
@@ -52,10 +49,12 @@ func NewHandler(cfg Config) http.Handler {
 	if cfg.TrustProxy {
 		r.Use(middleware.RealIP)
 	}
+	r.Use(requestLogger(cfg.TrustProxy))
+	r.Use(rateLimit(cmp.Or(cfg.IPRequestsPerMinute, 600), ipKey))
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "Not Found")
 	})
-	// Свой обработчик 405 в chi теряет заголовок Allow — собираем его сами.
+	// Свой обработчик 405 в chi не ставит Allow.
 	r.MethodNotAllowed(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Allow", strings.Join(allowedMethods(r, req.URL.Path), ", "))
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method Not Allowed")
@@ -68,6 +67,7 @@ func NewHandler(cfg Config) http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
+			r.Use(rateLimit(cmp.Or(cfg.UserRequestsPerMinute, 300), userKey))
 			r.Post("/auth/logout", s.logout)
 			r.Get("/me", s.me)
 

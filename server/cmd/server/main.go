@@ -1,17 +1,9 @@
-// Сервер Seydlitz Dataslate.
-//
-//	server                       запустить HTTP-сервер (то же, что server serve)
-//	server admin create <login>  создать администратора; пароль — из терминала или stdin
-//
-// Переменные окружения:
-//
-//	DATABASE_URL  postgres://user:pass@host:5432/db (обязательна)
-//	ADDR          адрес HTTP-сервера, по умолчанию 127.0.0.1:8090 (наружу — через обратный прокси)
-//	TRUST_PROXY   1 — брать IP клиента из X-Real-IP / X-Forwarded-For (только за прокси)
+// Сервер Seydlitz Dataslate; команды и переменные окружения — в README.
 package main
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -30,6 +22,7 @@ import (
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/logging"
 )
 
 const usage = `usage:
@@ -45,6 +38,12 @@ func main() {
 }
 
 func run(args []string) error {
+	logger, err := logging.New(os.Stderr, cmp.Or(os.Getenv("LOG_FORMAT"), "text"), cmp.Or(os.Getenv("LOG_LEVEL"), "info"))
+	if err != nil {
+		return err
+	}
+	slog.SetDefault(logger)
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -67,8 +66,6 @@ func openDB(ctx context.Context) (*pgxpool.Pool, error) {
 	return db.Open(ctx, url)
 }
 
-// serve работает до сигнала остановки или ошибки сервера; os.Exit — только в main,
-// чтобы отложенные вызовы здесь успели выполниться.
 func serve(ctx context.Context) error {
 	addr := os.Getenv("ADDR")
 	if addr == "" {
@@ -99,7 +96,7 @@ func serve(ctx context.Context) error {
 
 	select {
 	case err := <-serveErr:
-		return err // ListenAndServe возвращает ErrServerClosed только после Shutdown
+		return err // ErrServerClosed бывает только после Shutdown
 	case <-ctx.Done():
 	}
 
@@ -115,7 +112,6 @@ func serve(ctx context.Context) error {
 	return nil
 }
 
-// cleanupSessions раз в час удаляет истёкшие сессии.
 func cleanupSessions(ctx context.Context, q *dbq.Queries) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
@@ -164,8 +160,7 @@ func createAdmin(ctx context.Context, login string) error {
 	return nil
 }
 
-// readPassword спрашивает пароль дважды без эха, если stdin — терминал,
-// иначе читает одну строку (для скриптов: echo "$PASSWORD" | server admin create …).
+// readPassword: без эха из терминала, иначе строкой из stdin (для скриптов).
 func readPassword() (string, error) {
 	fd := int(os.Stdin.Fd())
 	if !term.IsTerminal(fd) {

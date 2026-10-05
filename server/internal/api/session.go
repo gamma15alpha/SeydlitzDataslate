@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,15 +13,13 @@ import (
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/logging"
 )
 
-// Сессия — случайный токен; клиент присылает его в cookie (веб) или в заголовке
-// Authorization: Bearer (Android). В базе — только хеш.
 const (
 	sessionCookie = "session"
 	sessionTTL    = 30 * 24 * time.Hour
-	// Сессию, которой осталось жить меньше этого, продлеваем при использовании:
-	// активный пользователь не разлогинивается, а базу не трогаем на каждом запросе.
+	// Продлеваем, только когда осталось меньше, — не пишем в базу на каждый запрос.
 	sessionRefresh = 15 * 24 * time.Hour
 )
 
@@ -60,7 +57,7 @@ func setSessionCookie(w http.ResponseWriter, token string, maxAge time.Duration)
 		Path:     "/api",
 		MaxAge:   int(maxAge.Seconds()),
 		HttpOnly: true,
-		Secure:   true, // браузеры разрешают Secure-cookie и на http://localhost
+		Secure:   true, // браузеры принимают Secure и на http://localhost
 		SameSite: http.SameSiteLaxMode,
 	})
 }
@@ -72,7 +69,6 @@ func clearSessionCookie(w http.ResponseWriter) {
 	})
 }
 
-// sessionToken достаёт токен из Authorization: Bearer или из cookie.
 func sessionToken(r *http.Request) (token string, fromCookie bool) {
 	if h := r.Header.Get("Authorization"); h != "" {
 		if t, ok := strings.CutPrefix(h, "Bearer "); ok {
@@ -116,6 +112,9 @@ func (s *server) requireUser(next http.Handler) http.Handler {
 				setSessionCookie(w, token, sessionTTL)
 			}
 		}
+		if info := logging.Request(r.Context()); info != nil {
+			info.UserID = row.User.ID.String()
+		}
 		ctx := context.WithValue(r.Context(), sessionKey{}, &session{user: row.User, tokenHash: hash})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -131,7 +130,6 @@ func requireAdmin(next http.Handler) http.Handler {
 	})
 }
 
-// limited отвечает 429, если по одному из ключей исчерпан лимит неудачных попыток.
 func limited(w http.ResponseWriter, checks ...func() (bool, time.Duration)) bool {
 	for _, check := range checks {
 		if blocked, retry := check(); blocked {
@@ -141,11 +139,4 @@ func limited(w http.ResponseWriter, checks ...func() (bool, time.Duration)) bool
 		}
 	}
 	return false
-}
-
-func clientIP(r *http.Request) string {
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		return host
-	}
-	return r.RemoteAddr
 }

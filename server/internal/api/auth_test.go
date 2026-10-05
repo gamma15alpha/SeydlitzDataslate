@@ -16,7 +16,6 @@ import (
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbtest"
 )
 
-// testAPI — API поверх отдельной тестовой базы.
 type testAPI struct {
 	t *testing.T
 	h http.Handler
@@ -25,11 +24,16 @@ type testAPI struct {
 
 func newTestAPI(t *testing.T) *testAPI {
 	t.Helper()
-	pool := dbtest.New(t)
-	return &testAPI{t: t, h: NewHandler(Config{Pool: pool}), q: dbq.New(pool)}
+	return newTestAPIWith(t, Config{})
 }
 
-// do выполняет запрос; token — Bearer-токен ("" — без авторизации), body — в JSON (nil — без тела).
+func newTestAPIWith(t *testing.T, cfg Config) *testAPI {
+	t.Helper()
+	pool := dbtest.New(t)
+	cfg.Pool = pool
+	return &testAPI{t: t, h: NewHandler(cfg), q: dbq.New(pool)}
+}
+
 func (a *testAPI) do(method, path, token string, body any) *httptest.ResponseRecorder {
 	a.t.Helper()
 	var buf bytes.Buffer
@@ -66,7 +70,6 @@ func expectStatus(t *testing.T, rec *httptest.ResponseRecorder, want int) {
 	}
 }
 
-// createUser создаёт пользователя напрямую в базе и входит им; возвращает токен.
 func (a *testAPI) createUser(login, password string, admin bool) string {
 	a.t.Helper()
 	_, err := a.q.CreateUser(context.Background(), dbq.CreateUserParams{
@@ -97,7 +100,6 @@ func TestRegistrationByInvite(t *testing.T) {
 	admin := a.createUser("admin", "admin-password", true)
 	invite := a.createInvite(admin)
 
-	// Код инвайта вводят руками: регистр и пробелы по краям не важны.
 	rec := a.do(http.MethodPost, "/api/auth/register", "", registerRequest{
 		Invite: "  " + strings.ToLower(invite) + " ", Login: "Player", Password: "player-password",
 	})
@@ -146,7 +148,7 @@ func TestRegisterTakenLoginKeepsInvite(t *testing.T) {
 	expectStatus(t, rec, http.StatusConflict)
 	assertJSONError(t, rec, "login_taken")
 
-	// Транзакция откатилась — инвайт не сгорел.
+	// Инвайт не сгорел.
 	rec = a.do(http.MethodPost, "/api/auth/register", "", registerRequest{
 		Invite: invite, Login: "player", Password: "player-password",
 	})
@@ -223,7 +225,6 @@ func TestLoginRateLimit(t *testing.T) {
 		expectStatus(t, a.do(http.MethodPost, "/api/auth/login", "", loginRequest{Login: "player", Password: "wrong-password"}),
 			http.StatusUnauthorized)
 	}
-	// Лимит исчерпан — даже верный пароль не принимается до конца окна.
 	rec := a.do(http.MethodPost, "/api/auth/login", "", loginRequest{Login: "player", Password: "player-password"})
 	expectStatus(t, rec, http.StatusTooManyRequests)
 	assertJSONError(t, rec, "too_many_attempts")
@@ -289,7 +290,7 @@ func TestRejectsBadBodies(t *testing.T) {
 		return rec
 	}
 
-	// "Инкв" в cp1251 — так кириллицу отправляет, например, curl в консоли Windows.
+	// cp1251 — так шлёт curl в консоли Windows.
 	rec := post([]byte("{\"login\":\"\xc8\xed\xea\xe2\",\"password\":\"x\"}"))
 	expectStatus(t, rec, http.StatusBadRequest)
 	assertJSONError(t, rec, "bad_request")
@@ -299,12 +300,11 @@ func TestRejectsBadBodies(t *testing.T) {
 	assertJSONError(t, rec, "too_large")
 }
 
-// Веб-клиент: сессия в cookie, без токена в заголовке.
 func TestCookieSession(t *testing.T) {
 	a := newTestAPI(t)
 	a.createUser("player", "player-password", false)
 
-	srv := httptest.NewTLSServer(a.h) // Secure-cookie cookiejar отправляет только по https
+	srv := httptest.NewTLSServer(a.h) // Secure-cookie cookiejar шлёт только по https
 	t.Cleanup(srv.Close)
 	client := srv.Client()
 	client.Jar, _ = cookiejar.New(nil)
@@ -343,5 +343,53 @@ func TestCookieSession(t *testing.T) {
 	post("/api/auth/logout", "")
 	if code := get("/api/me"); code != http.StatusUnauthorized {
 		t.Fatalf("/api/me after logout: status = %d, want 401", code)
+	}
+}
+
+func TestUserRateLimit(t *testing.T) {
+	a := newTestAPIWith(t, Config{UserRequestsPerMinute: 2})
+	token := a.createUser("player", "player-password", false)
+
+	expectStatus(t, a.do(http.MethodGet, "/api/me", token, nil), http.StatusOK)
+	expectStatus(t, a.do(http.MethodGet, "/api/me", token, nil), http.StatusOK)
+	rec := a.do(http.MethodGet, "/api/me", token, nil)
+	expectStatus(t, rec, http.StatusTooManyRequests)
+	assertJSONError(t, rec, "rate_limited")
+
+	other := a.createUser("other", "other-password", false)
+	expectStatus(t, a.do(http.MethodGet, "/api/me", other, nil), http.StatusOK)
+}
+
+func TestRequestLogsAreCorrelated(t *testing.T) {
+	logs := captureLogs(t) // до открытия базы: от уровня зависит SQL-трассировка
+	a := newTestAPI(t)
+	token := a.createUser("player", "player-password", false)
+	logs.Reset()
+
+	rec := a.do(http.MethodGet, "/api/me", token, nil)
+	expectStatus(t, rec, http.StatusOK)
+	id := rec.Header().Get("X-Request-ID")
+	me := decode[userResponse](t, rec)
+
+	var sawQuery, sawAccess bool
+	for _, r := range logRecords(t, logs) {
+		if r["request_id"] != id {
+			t.Errorf("record without this request's id: %v", r)
+			continue
+		}
+		switch r["msg"] {
+		case "db query":
+			if r["query"] == "GetSessionUser" {
+				sawQuery = true
+			}
+			if _, leaked := r["args"]; leaked {
+				t.Errorf("query args are logged: %v", r)
+			}
+		case "request":
+			sawAccess = r["user_id"] == me.ID.String() && r["route"] == "/api/me"
+		}
+	}
+	if !sawQuery || !sawAccess {
+		t.Errorf("query logged: %v, access log with user_id: %v\n%s", sawQuery, sawAccess, logs)
 	}
 }

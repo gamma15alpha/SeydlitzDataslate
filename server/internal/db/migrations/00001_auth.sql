@@ -1,12 +1,11 @@
--- Пользователи, инвайты на регистрацию, сессии.
--- Коды инвайтов и токены сессий хранятся только как SHA-256: утечка базы не даёт войти.
+-- Коды инвайтов и токены сессий хранятся только как SHA-256.
 
 -- +goose Up
 CREATE TABLE users (
     id            uuid PRIMARY KEY DEFAULT uuidv7(),
     login         text NOT NULL,
     display_name  text NOT NULL,
-    password_hash text NOT NULL, -- argon2id в PHC-формате
+    password_hash text NOT NULL, -- argon2id, PHC
     is_admin      boolean NOT NULL DEFAULT false,
     created_at    timestamptz NOT NULL DEFAULT now()
 );
@@ -18,7 +17,7 @@ CREATE TABLE invites (
     created_by uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL,
-    used_at    timestamptz, -- признак использования; used_by может обнулиться при удалении пользователя
+    used_at    timestamptz, -- used_by обнуляется при удалении пользователя, used_at остаётся
     used_by    uuid REFERENCES users (id) ON DELETE SET NULL
 );
 

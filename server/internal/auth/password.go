@@ -1,4 +1,4 @@
-// Package auth — пароли, секреты (токены сессий, коды инвайтов) и ограничение попыток.
+// Package auth — пароли, секреты и лимит неудачных попыток.
 package auth
 
 import (
@@ -14,8 +14,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-// Параметры argon2id — рекомендация OWASP (19 МиБ, 2 прохода, 1 поток).
-// Хранятся в самом хеше, так что их можно менять: старые хеши проверяются со своими.
+// argon2id по OWASP. Параметры пишутся в хеш, поэтому их можно менять.
 const (
 	argonMemory  = 19 * 1024 // КиБ
 	argonTime    = 2
@@ -26,7 +25,7 @@ const (
 
 var b64 = base64.RawStdEncoding
 
-// HashPassword возвращает хеш argon2id в PHC-формате: $argon2id$v=19$m=…,t=…,p=…$соль$хеш.
+// HashPassword возвращает хеш в PHC-формате.
 func HashPassword(password string) string {
 	salt := make([]byte, saltLen)
 	rand.Read(salt)
@@ -35,7 +34,6 @@ func HashPassword(password string) string {
 		argon2.Version, argonMemory, argonTime, argonThreads, b64.EncodeToString(salt), b64.EncodeToString(key))
 }
 
-// VerifyPassword сравнивает пароль с хешем из HashPassword за постоянное время.
 func VerifyPassword(password, encoded string) (bool, error) {
 	parts := strings.Split(encoded, "$")
 	if len(parts) != 6 || parts[1] != "argon2id" {
@@ -64,13 +62,12 @@ func VerifyPassword(password, encoded string) (bool, error) {
 
 var dummyHash = sync.OnceValue(func() string { return HashPassword("dummy password") })
 
-// VerifyDummy тратит столько же времени, сколько VerifyPassword: вход с несуществующим
-// логином не должен отвечать заметно быстрее, иначе по времени можно перебирать логины.
+// VerifyDummy выравнивает время ответа для несуществующего логина.
 func VerifyDummy(password string) {
 	_, _ = VerifyPassword(password, dummyHash())
 }
 
-// ValidateLogin возвращает описание проблемы или "" для допустимого логина.
+// ValidateLogin и ValidatePassword возвращают описание ошибки или "".
 func ValidateLogin(login string) string {
 	if len(login) < 3 || len(login) > 32 {
 		return "login must be 3 to 32 characters long"
@@ -83,7 +80,6 @@ func ValidateLogin(login string) string {
 	return ""
 }
 
-// ValidatePassword возвращает описание проблемы или "" для допустимого пароля.
 func ValidatePassword(password string) string {
 	if n := utf8.RuneCountInString(password); n < 8 || n > 128 {
 		return "password must be 8 to 128 characters long"

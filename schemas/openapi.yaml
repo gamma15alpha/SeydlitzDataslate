@@ -8,6 +8,14 @@ info:
     Авторизация — токен сессии: веб получает его в HttpOnly-cookie `session`,
     Android — в теле ответа на вход и передаёт в `Authorization: Bearer …`.
     Запросы с телом — только `Content-Type: application/json`.
+
+    У каждого ответа есть заголовок `X-Request-ID` — по нему в логах сервера находятся
+    все записи этого запроса; клиентам стоит показывать его в сообщениях об ошибках.
+
+    Лимиты запросов: 600 в минуту с одного IP (IPv6 — с сети /64) и 300 в минуту
+    на пользователя для запросов с сессией. Текущее состояние — в заголовках
+    `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (unix-время);
+    при превышении — `429` с кодом `rate_limited` и `Retry-After`.
   version: 0.1.0
   license:
     name: MIT
@@ -290,7 +298,7 @@ components:
           type: string
           description: |
             Машиночитаемый код. Общие: `bad_request`, `too_large`, `unsupported_media_type`, `unauthorized`,
-            `forbidden`, `not_found`, `method_not_allowed`, `too_many_attempts`, `internal`;
+            `forbidden`, `not_found`, `method_not_allowed`, `rate_limited`, `too_many_attempts`, `internal`;
             остальные — в описаниях ответов конкретных операций.
           examples: ["not_found"]
 

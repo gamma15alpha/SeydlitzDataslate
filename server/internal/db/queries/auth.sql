@@ -6,7 +6,7 @@ RETURNING *;
 -- name: GetUserByLogin :one
 SELECT * FROM users WHERE lower(login) = lower(@login);
 
--- Занимает инвайт; вызывать в транзакции вместе с созданием пользователя.
+-- Вызывать в одной транзакции с CreateUser.
 -- name: ClaimInvite :one
 UPDATE invites SET used_at = now()
 WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now()
@@ -26,7 +26,7 @@ FROM invites i
 LEFT JOIN users u ON u.id = i.used_by
 ORDER BY i.created_at DESC;
 
--- Использованные инвайты не удаляются: они — история, кто кого пригласил.
+-- Использованные остаются как история.
 -- name: DeleteUnusedInvite :execrows
 DELETE FROM invites WHERE id = $1 AND used_at IS NULL;
 
