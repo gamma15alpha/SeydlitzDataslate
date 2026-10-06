@@ -31,7 +31,7 @@ Kotlin + Jetpack Compose (Material 3). Сеть — Ktor Client (движок Ok
 
 ## Языки
 
-Тексты — `res/values/strings.xml` (русский, по умолчанию) и `res/values-en/strings.xml`; `StringsTest` падает, если перевод неполный. Язык — системный; на Android 13+ его можно выбрать для приложения в настройках системы.
+Тексты — `res/values/strings.xml` (русский, по умолчанию) и `res/values-en/strings.xml`; `StringsTest` падает, если перевод неполный. Язык переключается в приложении (RU/EN на экранах входа и главном, `ui/LanguageSwitch.kt`); на Android 13+ его можно выбрать и в настройках системы.
 
 ## Контент
 
