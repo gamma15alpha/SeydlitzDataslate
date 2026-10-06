@@ -1,63 +1,36 @@
 # Сервер
 
-Go, роутер [chi](https://github.com/go-chi/chi), PostgreSQL 18 через [pgx](https://github.com/jackc/pgx). Запросы — [sqlc](https://sqlc.dev), миграции — [goose](https://github.com/pressly/goose). Отвечает за аккаунты, синхронизацию персонажей и раздачу пакетов контента.
-
-Контракт API — [`../schemas/openapi.yaml`](../schemas/openapi.yaml) (OpenAPI 3.1); форматы данных — JSON Schema в той же папке. Тест `TestRoutesMatchSpec` падает, если маршруты сервера и спецификация расходятся: новый маршрут сначала описывается в спецификации.
-
-## Команды
+Go, [chi](https://github.com/go-chi/chi), PostgreSQL 18 через [pgx](https://github.com/jackc/pgx), [sqlc](https://sqlc.dev), [goose](https://github.com/pressly/goose). Контракт API — [`../schemas/openapi.yaml`](../schemas/openapi.yaml); `TestRoutesMatchSpec` падает, если маршруты и спецификация расходятся.
 
 ```
-docker compose up -d                 
+docker compose up -d
 export DATABASE_URL=postgres://dataslate:dataslate@127.0.0.1:5432/dataslate
 
-go run ./cmd/server                  
-go run ./cmd/server admin create root # первый администратор; пароль спросит без эха
+go run ./cmd/server
+go run ./cmd/server admin create root
 
-TEST_DATABASE_URL=$DATABASE_URL go test ./...  
-go tool -modfile=tools.mod sqlc generate        
+TEST_DATABASE_URL=$DATABASE_URL go test ./...
+go tool -modfile=tools.mod sqlc generate
 go build -o bin/server -ldflags "-X github.com/gamma15alpha/SeydlitzDataslate/server/internal/api.Version=0.1.0" ./cmd/server
 ```
 
-sqlc закреплён в отдельном `tools.mod`, чтобы его зависимости не попадали в `go.mod` сервера.
-
-## Устройство
-
-```
-cmd/server/        запуск, CLI (admin create)
-internal/account/  сценарии учётных записей: регистрация, вход, смена логина и пароля, создание админа; правила логина и пароля
-internal/session/  сессии: создание, проверка с продлением и ротацией, список, завершение
-internal/invite/   инвайты: создание, список, отзыв, использование при регистрации
-internal/api/      HTTP: разбор запроса → сценарий → ответ; ошибки сценариев → статусы и коды (errors.go)
-internal/auth/     техника: argon2id, секреты, лимитер неудачных попыток
-internal/db/       подключение, миграции; dbq/ — код sqlc (не править руками)
-internal/logging/  slog, ID запроса
-```
-
-Сценарии про HTTP не знают и возвращают ошибки-значения (`account.ErrLoginTaken`, `session.ErrRevoked`, …) — их переводит `api/errors.go`. Работают с базой через sqlc напрямую, без интерфейсов-репозиториев; функции `session` и `invite` принимают `*dbq.Queries`, поэтому их можно звать внутри транзакции другого сценария (регистрация: инвайт → пользователь → сессия одной транзакцией). Тесты: у каждого сценария — свои (на базе, без HTTP), в `api` — приёмочные по HTTP.
-
-## Переменные окружения
+`admin create` создаёт первого администратора, регистрация остальных — по инвайтам.
 
 | Переменная | Значение |
 |---|---|
-| `DATABASE_URL` | обязательна: `postgres://user:pass@host:5432/db` |
-| `ADDR` | адрес HTTP-сервера; по умолчанию `127.0.0.1:8090` — наружу сервер выставляет обратный прокси |
-| `TRUST_PROXY` | `1` — брать IP клиента из `X-Real-IP` / `X-Forwarded-For` и ID запроса из `X-Request-ID`. Только если сервер доступен исключительно через прокси, который эти заголовки перезаписывает |
-| `LOG_FORMAT` | `text` (по умолчанию) или `json` — для сервера, где логи собирает journald или агент |
-| `LOG_LEVEL` | `debug`, `info` (по умолчанию), `warn`, `error`. На `debug` пишутся и SQL-запросы (имя запроса sqlc и время, без аргументов) |
+| `DATABASE_URL` | обязательна |
+| `ADDR` | по умолчанию `127.0.0.1:8090` |
+| `TRUST_PROXY` | `1` — IP клиента и ID запроса из заголовков прокси; только за прокси, который их перезаписывает |
+| `LOG_FORMAT` | `text` (по умолчанию) или `json` |
+| `LOG_LEVEL` | `debug` (с SQL-запросами), `info` (по умолчанию), `warn`, `error` |
 
-## Аккаунты
-
-- Регистрация — только по инвайту; инвайты создаёт администратор (`POST /api/invites`), первого администратора — CLI.
-- Сессия — случайный токен на 30 дней, продлевается при использовании, но не дольше 90 дней со входа (абсолютный предел по OWASP). На 401 — `WWW-Authenticate: Bearer` (RFC 6750). Веб получает его в cookie (`HttpOnly`, `Secure`, `SameSite=Lax`), Android — в теле ответа, и шлёт в `Authorization: Bearer`. В базе хранятся только SHA-256 токенов и кодов инвайтов.
-- Раз в сутки токен меняется: веб получает новый в cookie, Android — в заголовке `X-Session-Token`. Старый принимается, пока новый не использован, и минуту после; позже — признак кражи: сессия отзывается (`401 session_revoked`), в лог — `WARN session token reuse`.
-- `GET/DELETE /api/sessions` — активные сессии пользователя, завершение одной или всех остальных.
-- `PUT /api/me/login`, `PUT /api/me/password` — смена логина и пароля, обе с текущим паролем. Неверный пароль — `403 wrong_password` (не 401: сессия жива), попытки идут в лимит входа. После смены пароля остальные сессии завершаются, после смены логина — нет.
-- Неудачные попытки входа и регистрации ограничены: 30 за 15 минут с одного IP, 10 за 15 минут на один логин; дальше — `429` с `Retry-After`.
-
-## Лимиты и логи
-
-- Все запросы: 600 в минуту с одного IP (IPv6 — с сети /64; запас — на игроков за одним роутером) и 300 в минуту на пользователя с сессией. Превышение — `429`, код `rate_limited`. Счётчики в памяти процесса.
-- У каждого запроса есть ID: заголовок `X-Request-ID` в ответе и поле `request_id` во всех записях лога этого запроса — access-логе, ошибках, SQL-трассировке. После проверки сессии к записям добавляется `user_id`. За прокси с `TRUST_PROXY=1` берётся ID от прокси (nginx: `proxy_set_header X-Request-ID $request_id;`), и записи nginx и сервера связываются.
-- Access-лог — одна строка на запрос: метод, путь (без query), шаблон маршрута, статус, размер, время, IP. Ответы 5xx — на уровне `error`; паника обработчика превращается в `500` с записью стека.
-
-Маршруты и форматы — в спецификации. Ошибки — JSON `{"error":"…","code":"…"}`: `error` — для человека, `code` — для клиента (`login_taken`, `invalid_invite`, …). Тело запроса — только JSON в UTF-8.
+```
+cmd/server/        запуск, CLI
+internal/account/  учётные записи
+internal/session/  сессии
+internal/invite/   инвайты
+internal/api/      HTTP; ошибки сценариев → статусы (errors.go)
+internal/auth/     argon2id, секреты, лимитер
+internal/db/       подключение, миграции; dbq/ — код sqlc
+internal/logging/  slog, ID запроса
+```
