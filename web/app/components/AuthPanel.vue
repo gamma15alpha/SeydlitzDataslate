@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{ title: string; error: string | null; busy: boolean; submitLabel: string }>()
 defineEmits<{ submit: [] }>()
+const { available } = useServerLink()
 </script>
 
 <template>
@@ -9,7 +10,8 @@ defineEmits<{ submit: [] }>()
       <h1>{{ title }}</h1>
       <slot />
       <p v-if="error" class="error" role="alert">{{ error }}</p>
-      <button type="submit" :disabled="busy">{{ busy ? '…' : submitLabel }}</button>
+      <ServerNotice />
+      <button type="submit" :disabled="busy || !available">{{ busy ? '…' : submitLabel }}</button>
       <p class="muted"><slot name="footer" /></p>
     </form>
   </main>

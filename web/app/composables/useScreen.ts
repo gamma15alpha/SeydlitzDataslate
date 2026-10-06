@@ -1,5 +1,4 @@
-// Экран корпуса: приложение живёт внутри него. У .screen — container-type: size, поэтому position: fixed
-// внутри отсчитывается от экрана, а не от окна браузера; размеры для расчётов — отсюда, а не window.inner*.
+// Приложение живёт на экране корпуса: размеры — отсюда, а не window.inner*.
 const element = shallowRef<HTMLElement | null>(null)
 const size = reactive({ width: 0, height: 0 })
 let observer: ResizeObserver | undefined
@@ -9,7 +8,7 @@ export function registerScreen(el: HTMLElement | null) {
   observer?.disconnect()
   element.value = el
   if (!el) return
-  // Сразу, а не по первому колбэку наблюдателя: страница уже читает размер при открытии.
+  // Страница читает размер сразу, не дожидаясь наблюдателя.
   size.width = el.clientWidth
   size.height = el.clientHeight
   observer = new ResizeObserver(() => {

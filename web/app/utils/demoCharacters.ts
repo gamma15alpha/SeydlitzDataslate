@@ -1,7 +1,6 @@
 import pack from '../../../schemas/examples/dh1-mock.content.json'
 import character from '../../../schemas/examples/dh1.character.json'
 
-// Пока хранилища нет — анкеты и контент из примеров schemas/examples (выдуманные данные, D13).
 export type Character = typeof character
 export const demoContent = pack.content as Dh1Content
 export const demoCharacters: Character[] = [character]

@@ -9,7 +9,7 @@ watch(() => props.entry, () => (showOriginal.value = false))
 const main = computed(() => (props.entry.description ? pickText(props.entry.description, lang.value) : ''))
 const others = computed(() => (props.entry.description ? allTexts(props.entry.description).filter(([, text]) => text !== main.value) : []))
 
-// Тянуть — только за пустое место полосы: название можно выделить и скопировать.
+// Не за название: его можно выделить и скопировать.
 function onHeaderPointerDown(e: PointerEvent) {
   if (props.draggable && !(e.target as HTMLElement).closest('.title')) emit('grab', e)
 }
@@ -53,7 +53,6 @@ function onClick(e: MouseEvent) {
   overflow: hidden;
 }
 
-/* Полоса заголовка, как у окна: в режиме окна за неё перетаскивают. */
 header {
   display: flex;
   flex-shrink: 0;

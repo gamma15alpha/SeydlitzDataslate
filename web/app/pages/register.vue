@@ -5,7 +5,6 @@ useHead({ title: () => t('auth.registerTitle') })
 
 const auth = useAuth()
 const route = useRoute()
-// Ссылка-приглашение: /register?invite=КОД
 const form = reactive({
   invite: typeof route.query.invite === 'string' ? route.query.invite : '',
   login: '',

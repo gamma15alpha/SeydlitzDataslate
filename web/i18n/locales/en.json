@@ -19,7 +19,6 @@
     "passwordRepeat": "Repeat password",
     "passwordsMismatch": "Passwords do not match",
     "haveAccount": "Already have an account?",
-    "offline": "No connection to the server — working offline",
     "logout": "Sign out",
     "revoked": "Session ended: it was used from another device. Sign in again and check your active sessions.",
     "show": "show",
@@ -55,6 +54,7 @@
   },
   "errors": {
     "noConnection": "No connection to the server",
+    "needServer": "Requires a connection to the server",
     "server": "Server error {status}",
     "serverWithId": "Server error {status}, request ID {id}",
     "tooMany": "Too many attempts. Try again in {time}",
@@ -76,7 +76,8 @@
     "phosphor": "Phosphor",
     "scanlines": "Scanlines",
     "serverDown": "Server not responding: working offline",
-    "connecting": "Establishing vox link…"
+    "connecting": "Establishing vox link…",
+    "update": "New version: press to update"
   },
   "nav": {
     "sheet": "Sheet",

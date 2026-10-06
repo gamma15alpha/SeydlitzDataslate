@@ -4,6 +4,8 @@ useHead({ htmlAttrs: { lang: locale }, titleTemplate: page => (page ? t('app.pag
 </script>
 
 <template>
+  <NuxtPwaManifest />
+  <NuxtPwaAssets />
   <DataslateCasing>
     <NuxtLayout>
       <NuxtPage />

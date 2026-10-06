@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// Каркас экрана (D61): строка приложения (назад, крошки, профиль, настройки), разделы, контент.
-// Раскладка — по размеру экрана корпуса: узкий — вкладки снизу, от 500px — сверху, низкий (телефон в альбоме) — колонка слева.
 const { t } = useI18n()
 const route = useRoute()
 const auth = useAuth()
@@ -53,7 +51,7 @@ const under = (prefix: string) => route.path === prefix || route.path.startsWith
 </template>
 
 <style scoped>
-/* Узкий экран (телефон): строка приложения сверху, вкладки снизу — под большим пальцем */
+/* Телефон: вкладки снизу, под большим пальцем */
 .shell {
   display: grid;
   height: 100%;
@@ -92,7 +90,6 @@ h1 {
   text-overflow: ellipsis;
 }
 
-/* Путь над заголовком, мелко: Профиль › Сессии */
 .crumbs {
   display: flex;
   overflow: hidden;
@@ -120,7 +117,6 @@ h1 {
   text-decoration: underline;
 }
 
-/* Кнопки-значки строки: назад, настройки, профиль */
 .icon-button,
 .shortcut {
   display: flex;
@@ -150,7 +146,6 @@ h1 {
   color: var(--phosphor);
 }
 
-/* На узком экране у профиля — только значок */
 .shortcut-label {
   display: none;
   max-width: 16ch;
@@ -185,7 +180,6 @@ h1 {
   color: var(--phosphor);
 }
 
-/* Выбранный раздел — светится полосой, как выделение на экране */
 .tab.active {
   color: var(--phosphor);
   box-shadow: inset 0 2px 0 var(--phosphor);
@@ -196,11 +190,10 @@ h1 {
   grid-area: content;
   overflow: auto;
   overscroll-behavior: contain;
-  /* cqh у страниц — от области контента, без строки приложения и вкладок */
+  /* cqh у страниц — от области контента */
   container: content / size;
 }
 
-/* От 500px: вкладки — строкой под строкой приложения, текстом */
 @container screen (min-width: 500px) {
   .shell {
     grid-template-rows: auto auto minmax(0, 1fr);
@@ -249,7 +242,7 @@ h1 {
   }
 }
 
-/* Низкий экран (телефон в альбоме): вкладки — узкой колонкой значков слева, строка приложения не съедает высоту */
+/* Телефон в альбоме: вкладки колонкой слева, чтобы не съедать высоту */
 @container screen (min-width: 500px) and (max-height: 450px) {
   .shell {
     grid-template-columns: auto minmax(0, 1fr);

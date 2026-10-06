@@ -5,7 +5,6 @@ export type User = components['schemas']['User']
 type ApiError = components['schemas']['Error']
 type Translate = (key: string, params?: Record<string, unknown>) => string
 
-// Офлайн пускаем по последнему известному пользователю; выкидывает только 401 от сервера.
 const CACHE_KEY = 'dataslate:user'
 const RESTORE_TIMEOUT_MS = 5000
 
@@ -16,7 +15,6 @@ export function useAuth() {
   const user = useState<User | null>('auth:user', () => null)
   const offline = useState('auth:offline', () => false)
   const ready = useState('auth:ready', () => false)
-  // Ключ сообщения для экрана входа (например, сессию отозвали).
   const notice = useState<string | null>('auth:notice', () => null)
   const t: Translate = useNuxtApp().$i18n.t
 
@@ -33,8 +31,7 @@ export function useAuth() {
 
   async function load() {
     try {
-      // Middleware ждёт этот запрос до первой страницы: без таймаута зависший сервер или прокси
-      // оставляет пустой экран. Не дождались — как офлайн.
+      // Middleware ждёт его до первой страницы: без таймаута зависший сервер оставит пустой экран.
       const { data, error, response } = await api.GET('/api/me', { signal: AbortSignal.timeout(RESTORE_TIMEOUT_MS) })
       offline.value = false
       if (data) setUser(data)
@@ -54,7 +51,6 @@ export function useAuth() {
     return (restoring ??= load())
   }
 
-  // Повторная проверка сессии — например, когда связь с сервером вернулась после работы офлайн.
   function refresh() {
     return (refreshing ??= load().finally(() => (refreshing = undefined)))
   }
@@ -102,7 +98,6 @@ const knownCodes = new Set([
   'wrong_password', 'invalid_expiry',
 ])
 
-// Текст ошибки ответа API для человека: известный код — перевод, лимит — когда повторить, прочее — статус и ID запроса.
 export function errorMessage(t: Translate, error: ApiError | undefined, response: Response) {
   const code = error?.code ?? ''
   if (code === 'too_many_attempts' || code === 'rate_limited') {

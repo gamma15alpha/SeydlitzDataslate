@@ -23,6 +23,8 @@
   "devDependencies": {
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^26.6.4",
+    "@vite-pwa/assets-generator": "^1.0.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.3",
     "vitest": "^5.0.3",

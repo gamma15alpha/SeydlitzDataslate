@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Поле пароля с переключателем видимости. Атрибуты (autocomplete, required, minlength…) уходят на <input>.
+// Атрибуты — на <input>, а не на обёртку.
 defineOptions({ inheritAttrs: false })
 const model = defineModel<string>({ required: true })
 const { t } = useI18n()
@@ -26,11 +26,9 @@ const visible = ref(false)
 }
 
 input {
-  /* место под кнопку справа */
   padding-right: 6.5em;
 }
 
-/* Кнопка внутри поля: без рамки, приглушённая — как подпись, а не отдельное действие */
 .toggle {
   position: absolute;
   top: 1px;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Значки интерфейса — линиями, цветом текста (currentColor), как глифы терминала. Шестерня — символ #cog корпуса.
+// Шестерня — символ #cog из DataslateCasing.
 defineProps<{ name: IconName }>()
 </script>
 

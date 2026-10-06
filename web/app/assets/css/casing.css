@@ -1,36 +1,29 @@
-/* Корпус датаслейта вокруг экрана приложения (DataslateCasing.vue). Перенесён из версии на Avalonia (D10–D12). */
-
-/* Токены корпуса. Свет падает сверху слева: блики — на верхних и левых гранях, тени — на нижних и правых. */
+/* Свет сверху слева: блики на верхних и левых гранях, тени на нижних и правых. */
 :root {
-  /* Литой металл корпуса */
   --iron-hi: #4a443a;
   --iron: #2a2620;
   --iron-lo: #15130f;
   --iron-deep: #0b0a08;
 
-  /* Латунь */
   --brass-hi: #e2c27f;
   --brass: #c29a58;
   --brass-lo: #8a6a32;
   --brass-dark: #3b2b12;
 
-  /* Хром винтов и ободков */
   --chrome-hi: #e4ddcc;
   --chrome: #a39c8d;
   --chrome-lo: #5d564a;
 
-  /* Светодиод кнопки SCAN — «железо», от люминофора не зависит */
+  /* Не зависят от люминофора */
   --led: #8dff7a;
   --amber: #ffb347;
-  --red: #d33b2c; /* лампы, рамки */
-  --red-text: #e0483a; /* текст на экране: ≥4.5:1 */
+  --red: #d33b2c;
+  --red-text: #e0483a; /* контраст ≥4.5:1 */
 
-  /* Краска маркировки, воск, пергамент */
   --stencil: #d8d0bc;
   --wax: #9c2316;
   --parchment: #d9c9a3;
 
-  /* Сила сканлайнов (кнопка SCAN выключает их совсем) */
   --scanline-strength: 1;
 
   --deck-top: 84px;
@@ -38,7 +31,6 @@
   --column: 104px;
   --bezel-pad: 26px;
 
-  /* Текстуры: зерно литья, шлифовка, грязь. Шум SVG feTurbulence, без внешних файлов */
   --tex-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0.09'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tex-brushed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0.16'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tex-grime: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.03 0 0 0 0 0.02 1.7 0 0 0 -0.78'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -55,18 +47,13 @@ body {
   background: var(--iron-deep);
 }
 
-/* ---------- Корпус ---------- */
-
-/*
- * Корпус — сетка с именованными областями: на телефоне стойки переставляются
- * только стилями (см. «Телефоны» в конце файла).
- */
+/* Именованные области: на телефоне стойки переставляются только стилями. */
 .housing {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  /* dvh: корпус не уезжает под панели мобильного браузера */
+  /* не уезжает под панели мобильного браузера */
   height: 100dvh;
   display: grid;
   grid-template-columns: var(--column) minmax(0, 1fr) var(--column);
@@ -81,15 +68,13 @@ body {
   background:
     var(--tex-grime),
     var(--tex-grain),
-    /* копоть в углах */
     radial-gradient(circle at 0 0, rgba(0, 0, 0, 0.5), transparent 26%),
     radial-gradient(circle at 100% 0, rgba(0, 0, 0, 0.45), transparent 24%),
     radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0.55), transparent 28%),
     radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0.6), transparent 30%),
-    /* общий свет сверху слева */
     linear-gradient(160deg, var(--iron-hi) 0%, var(--iron) 38%, var(--iron-lo) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
-  /* Надписи корпуса — декор: не выделяются ни протяжкой, ни двойным кликом по ручкам */
+  /* декор не выделяется двойным кликом по ручкам */
   -webkit-user-select: none;
   user-select: none;
 }
@@ -107,7 +92,6 @@ body {
   flex: 1;
 }
 
-/* Стык панелей — канавка: тёмная линия и блик под ней */
 .deck-top {
   height: var(--deck-top);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 60%);
@@ -137,8 +121,6 @@ body {
   box-sizing: border-box;
 }
 
-/* ---------- Винты ---------- */
-
 .screw {
   --r: 0deg;
   position: relative;
@@ -153,7 +135,6 @@ body {
     0 2px 3px 2px rgba(0, 0, 0, 0.35);
 }
 
-/* Шлиц: у каждого винта свой поворот (--r) */
 .screw::before {
   content: '';
   position: absolute;
@@ -168,8 +149,6 @@ body {
   transform: rotate(var(--r));
 }
 
-/* ---------- Табличка ---------- */
-
 .nameplate {
   position: relative;
   display: flex;
@@ -178,12 +157,10 @@ body {
   padding: 10px 30px 10px 24px;
   border-radius: 3px;
   background:
-    /* заклёпки по углам */
     radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) left 4px top 4px / 8px 8px no-repeat,
     radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) right 4px top 4px / 8px 8px no-repeat,
     radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) left 4px bottom 4px / 8px 8px no-repeat,
     radial-gradient(circle, #f6e3b4 0 1px, var(--brass-lo) 2px, var(--brass-dark) 3px, transparent 3.5px) right 4px bottom 4px / 8px 8px no-repeat,
-    /* патина */
     radial-gradient(ellipse at 85% 80%, rgba(60, 80, 50, 0.35), transparent 45%),
     radial-gradient(ellipse at 10% 90%, rgba(40, 30, 10, 0.35), transparent 40%),
     var(--tex-brushed),
@@ -218,7 +195,6 @@ body {
   box-shadow: 0 0 0 1px var(--brass-dark), 0 0 6px rgba(211, 59, 44, 0.6);
 }
 
-/* Гравировка в латуни: тёмная бороздка с бликом по нижнему краю */
 .nameplate-title {
   margin: 0;
   font-family: var(--font-inscription);
@@ -230,7 +206,6 @@ body {
   text-shadow: 0 1px 0 rgba(255, 238, 195, 0.55), 0 -1px 0 rgba(40, 25, 5, 0.35);
 }
 
-/* Клеймо с серийным номером, выбитое в металле */
 .serial {
   padding: 4px 10px;
   border-radius: 2px;
@@ -241,7 +216,6 @@ body {
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
 }
 
-/* Маркировка краской по трафарету */
 .stencil {
   font-size: var(--text-label);
   line-height: 1;
@@ -250,8 +224,6 @@ body {
   opacity: 0.8;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
 }
-
-/* ---------- Сигнальные лампы ---------- */
 
 .lamps {
   display: flex;
@@ -268,18 +240,15 @@ body {
 
 .lamp {
   --lamp: #7dff6a;
-  /* хромированный ободок и посадочное гнездо */
   --lamp-ring: 0 0 0 2px #15130f, 0 0 0 4px var(--chrome), 0 0 0 5px #3a352d, 0 2px 3px 5px rgba(0, 0, 0, 0.45);
   position: relative;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  /* выключена: тёмное цветное стекло */
   background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--lamp) 22%, #120d08) 0, #0a0806 75%);
   box-shadow: var(--lamp-ring), inset 0 -2px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* Блик на линзе */
 .lamp::after {
   content: '';
   position: absolute;
@@ -301,18 +270,15 @@ body {
   animation: lamp-blink 0.7s steps(2, jump-none) infinite;
 }
 
-/* Лампа PWR при ошибке: красная */
 .lamp.fault {
   --lamp: #ff3b2a;
 }
 
-/* Лампа VOX, сервер не отвечает: красная и медленно мигает — отличается от ровной красной PWR и частой ACT */
+/* Медленно — не спутать с ровной красной PWR и частой ACT */
 .lamp.alarm {
   --lamp: #ff3b2a;
   animation: lamp-blink 1.4s steps(2, jump-none) infinite;
 }
-
-/* ---------- Решётки, вентиляция, трубы ---------- */
 
 .grille {
   flex: none;
@@ -352,7 +318,6 @@ body {
   min-height: 0;
 }
 
-/* Гофрированная труба: кольца поверх цилиндрической заливки */
 .conduit {
   width: 20px;
   border-radius: 10px;
@@ -369,7 +334,6 @@ body {
     linear-gradient(90deg, #120808 0%, #7a2a1f 35%, #3d1410 65%, #0d0605 100%);
 }
 
-/* Латунный хомут с двумя винтами */
 .clamp {
   position: absolute;
   left: 50%;
@@ -384,8 +348,6 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 3px 5px rgba(0, 0, 0, 0.6);
 }
 
-/* ---------- Органы управления ---------- */
-
 .control {
   display: flex;
   flex-direction: column;
@@ -393,7 +355,6 @@ body {
   gap: 9px;
 }
 
-/* Переключатель люминофора: метки шкалы по дуге, ручка поворачивается к выбранной */
 .phosphor-selector {
   position: relative;
   /* без задержки двойного тапа на телефоне */
@@ -421,12 +382,11 @@ body {
   color: var(--stencil);
   opacity: 0.55;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
-  /* по дуге радиусом 34px, подпись остаётся горизонтальной */
+  /* по дуге, подпись остаётся горизонтальной */
   transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-34px) rotate(calc(-1 * var(--angle)));
   transition: opacity 120ms;
 }
 
-/* Цветная точка — цвет люминофора этого положения */
 .phosphor-mark::after {
   content: '';
   width: 5px;
@@ -449,7 +409,6 @@ body {
   box-shadow: 0 0 6px 1px color-mix(in srgb, var(--mark) 60%, transparent);
 }
 
-/* Ручка с накаткой; указатель — светлая риска */
 .knob {
   --angle: -55deg;
   position: absolute;
@@ -493,7 +452,6 @@ body {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
-/* Кнопка с фиксацией: включено — утоплена, светодиод горит */
 .push-button {
   position: relative;
   touch-action: manipulation;
@@ -504,7 +462,6 @@ body {
   border-radius: 50%;
   cursor: pointer;
   background: radial-gradient(circle at 40% 32%, #57503f 0, #2b2721 55%, #15130f 100%);
-  /* хромированный ободок, гнездо и выпуклый колпачок */
   box-shadow:
     0 0 0 3px #15130f,
     0 0 0 5px var(--chrome),
@@ -553,7 +510,6 @@ body {
   box-shadow: 0 0 8px 2px color-mix(in srgb, var(--led) 30%, transparent), 0 0 2px var(--led);
 }
 
-/* Ползунок языка: прорезь в металле, рифлёная хромированная ручка ездит по ней */
 .lang-selector {
   display: flex;
   align-items: center;
@@ -592,10 +548,9 @@ body {
   height: 22px;
   border-radius: 4px;
   cursor: pointer;
-  /* Свайп по ползунку — его, а не жест браузера */
+  /* свайп — ползунку, а не браузеру */
   touch-action: none;
   background: linear-gradient(180deg, #050403, #1a1712);
-  /* утопленная прорезь в хромированной окантовке */
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.85),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06),
@@ -604,7 +559,6 @@ body {
     0 1px 0 3px rgba(255, 255, 255, 0.07);
 }
 
-/* Направляющая по дну прорези */
 .slide-switch::before {
   content: '';
   position: absolute;
@@ -617,7 +571,6 @@ body {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Зона нажатия выше самого ползунка — 44px по высоте */
 .slide-switch::after {
   content: '';
   position: absolute;
@@ -628,7 +581,6 @@ body {
   cursor: grabbing;
 }
 
-/* Во время свайпа ручка идёт за пальцем без запаздывания */
 .slide-switch.dragging .slide-knob {
   transition: none;
 }
@@ -646,7 +598,6 @@ body {
   height: 18px;
   border-radius: 3px;
   background:
-    /* рифление под палец */
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0 1px, rgba(255, 255, 255, 0.22) 1px 2px, transparent 2px 4px) center / 13px 10px no-repeat,
     linear-gradient(180deg, var(--chrome-hi), var(--chrome) 45%, var(--chrome-lo));
   box-shadow:
@@ -659,7 +610,6 @@ body {
   transition: transform 140ms ease-out;
 }
 
-/* Клавиши разделов на левой стойке: выбранная утоплена, над ней горит светодиод */
 .section-keys {
   display: flex;
   flex-direction: column;
@@ -677,7 +627,6 @@ body {
   cursor: pointer;
   touch-action: manipulation;
   background: linear-gradient(180deg, #4b453a, #2b2721 60%, #1d1a15);
-  /* хромированная окантовка гнезда, выпуклый колпачок */
   box-shadow:
     0 0 0 2px #15130f,
     0 0 0 3px var(--chrome-lo),
@@ -706,7 +655,6 @@ body {
   outline-offset: 6px;
 }
 
-/* Без входа разделов нет — клавиши не нажимаются */
 .section-key:disabled {
   cursor: default;
 }
@@ -729,15 +677,13 @@ body {
   box-shadow: 0 0 6px 1px color-mix(in srgb, var(--led) 45%, transparent);
 }
 
-/* ---------- Печать чистоты ---------- */
-
 .seal {
   position: relative;
   flex: none;
   width: 64px;
   height: 150px;
   transform: rotate(-4deg);
-  /* тень от лент: clip-path срезает box-shadow, поэтому фильтр на родителе */
+  /* clip-path срезает box-shadow, поэтому тень — фильтром на родителе */
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.55));
 }
 
@@ -757,7 +703,6 @@ body {
   color: rgba(60, 8, 4, 0.7);
 }
 
-/* Потёки воска */
 .seal-wax::before,
 .seal-wax::after {
   content: '';
@@ -786,7 +731,6 @@ body {
   filter: drop-shadow(0 1px 0 rgba(255, 160, 140, 0.35));
 }
 
-/* Пергамент: строки текста, рваный край */
 .seal-ribbon {
   position: absolute;
   top: 30px;
@@ -811,9 +755,6 @@ body {
   transform: rotate(-4deg);
 }
 
-/* ---------- Нижняя панель ---------- */
-
-/* Предупредительная разметка, затёртая */
 .hazard {
   flex: none;
   width: 200px;
@@ -850,7 +791,6 @@ body {
   background: radial-gradient(circle, #8c7a52 0 1.5px, #030302 2px 5px, #1a1814 6px);
 }
 
-/* ЖК-индикатор статуса в утопленном окне */
 .lcd {
   display: flex;
   align-items: center;
@@ -883,7 +823,15 @@ body {
   text-shadow: none;
 }
 
-/* ---------- Экран в рамке ---------- */
+.lcd-update {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 .bezel {
   position: relative;
@@ -910,7 +858,6 @@ body {
 .bezel-screw.bl { bottom: 6px; left: 6px; }
 .bezel-screw.br { bottom: 6px; right: 6px; }
 
-/* Посадочное место кинескопа: резиновый уплотнитель и тонкий блик по краю */
 .screen-well {
   position: absolute;
   inset: var(--bezel-pad);
@@ -931,17 +878,12 @@ body {
   background: var(--screen);
 }
 
-/*
- * Приложение — внутри экрана. container-type: size — контейнер для @container screen и единиц cq*;
- * contain: layout — точка отсчёта для position: fixed (окна и панели справок). Сам container-type
- * её не даёт: layout-containment из него убрали в спецификации.
- */
+/* contain: layout — точка отсчёта для position: fixed; container-type её больше не даёт по спецификации. */
 .screen {
   container: screen / size;
   contain: layout paint;
 }
 
-/* Приложение на экране выделяется как обычно */
 .screen-content {
   -webkit-user-select: text;
   user-select: text;
@@ -951,11 +893,7 @@ body {
   overscroll-behavior: contain;
 }
 
-/*
- * Сканлайны поверх экрана; клики проходят насквозь.
- * Как у кинескопа: тёмный промежуток и слабо светящаяся строка люминофора —
- * одни тёмные линии на почти чёрном экране не видны.
- */
+/* Строка слабо светится: одни тёмные линии на почти чёрном экране не видны. */
 .scanlines {
   position: absolute;
   inset: 0;
@@ -973,7 +911,6 @@ html.no-scanlines .scanlines {
   display: none;
 }
 
-/* Стекло: блик сверху слева и виньетка — края выпуклого кинескопа темнее центра */
 .glass {
   position: absolute;
   inset: 0;
@@ -988,8 +925,6 @@ html.no-scanlines .scanlines {
     inset 0 0 70px rgba(0, 0, 0, 0.45),
     inset 0 8px 16px rgba(0, 0, 0, 0.4);
 }
-
-/* ---------- Анимации ---------- */
 
 @keyframes lamp-blink {
   50% { filter: brightness(0.35); }
@@ -1006,14 +941,6 @@ html.no-scanlines .scanlines {
   }
 }
 
-/* ---------- Телефоны ---------- */
-
-/*
- * На телефоне рамка — две тонкие полосы (~100 px вместо ~250 на 412×922):
- * сверху табличка и лампы, снизу ЖК-окно статуса, рамка экрана 6 px.
- * Ручка PHOSPHOR, кнопка SCAN, клавиши разделов и печать убраны ради места (D12); разделы — вкладками на экране.
- * Люминофор и сканлайны настраиваются только на корпусе (D61): здесь действует выбор, сделанный на большом экране.
- */
 @media (max-width: 900px), (orientation: landscape) and (max-height: 500px) {
   :root {
     --bezel-pad: 6px;
@@ -1030,7 +957,7 @@ html.no-scanlines .scanlines {
     display: none;
   }
 
-  /* Высоту панелей задаёт строка сетки, а не десктопная --deck-top / --deck-bottom */
+  /* высоту задаёт строка сетки, а не --deck-top / --deck-bottom */
   .deck-top,
   .deck-bottom {
     height: auto;
@@ -1045,7 +972,6 @@ html.no-scanlines .scanlines {
     flex: 1 0 0;
   }
 
-  /* Внизу ЖК-окно занимает всю ширину — распорки не нужны */
   .deck-bottom .deck-spacer {
     display: none;
   }
@@ -1068,13 +994,12 @@ html.no-scanlines .scanlines {
     height: 28px;
   }
 
-  /* Ползунок LANG остаётся рядом с ЖК-окном — без подписи, места мало */
   .deck-bottom .control .stencil {
     display: none;
   }
 }
 
-/* Портрет: телефоны (360–412 px) и планшеты до 900 px — экран шире, чем между стойками (D61) */
+/* Тонкий корпус: телефоны и планшеты до 900 px в портрете */
 @media (max-width: 900px) {
   .housing {
     grid-template-columns: minmax(0, 1fr);
@@ -1113,7 +1038,6 @@ html.no-scanlines .scanlines {
     gap: 12px;
   }
 
-  /* Подписи ламп оставляем: они объясняют, что горит */
   .lamp-unit {
     gap: 4px;
   }
@@ -1135,7 +1059,7 @@ html.no-scanlines .scanlines {
   }
 }
 
-/* Альбомная ориентация (высота около 360–412 px): только экран и полоса статуса */
+/* Телефон в альбоме: только экран и полоса статуса */
 @media (orientation: landscape) and (max-height: 500px) {
   .housing {
     grid-template-columns: minmax(0, 1fr);

@@ -1,8 +1,6 @@
 import { api } from '~/api/client'
 
-// Люминофор и сканлайны применяются до монтирования — экран не мелькает цветом по умолчанию.
-// ACT горит, пока открывается страница или идёт запрос к серверу; PWR краснеет при ошибке приложения;
-// VOX — связь с сервером (useServerLink): ответы API её подтверждают, сбой — повод проверить сразу.
+// До монтирования — экран не мелькает цветом по умолчанию.
 export default defineNuxtPlugin((nuxtApp) => {
   const { phosphor, scanlines, navigating, requests, fault } = useCasing()
   watchEffect(() => {

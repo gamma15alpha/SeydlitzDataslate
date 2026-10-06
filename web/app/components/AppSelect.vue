@@ -1,8 +1,6 @@
 <script setup lang="ts" generic="T extends string | number">
-// Выпадающий список в стиле терминала вместо <select>: меню системного рисует браузер или ОС, вне палитры экрана.
-// Доступность — шаблон WAI-ARIA «select-only combobox»: фокус остаётся на кнопке, выбранный пункт — aria-activedescendant.
-// Клавиатура: стрелки, Home/End, Enter/пробел, Esc, Tab, первая буква пункта.
-// Подпись — пропсом label, а не обёрткой <label>: клик по пункту внутри label снова нажал бы кнопку и открыл список.
+// Меню <select> рисует ОС, вне палитры экрана. Шаблон — WAI-ARIA select-only combobox.
+// Подпись — пропсом: внутри <label> клик по пункту снова открыл бы список.
 const model = defineModel<T>({ required: true })
 const props = defineProps<{ options: { value: T; label: string }[]; label: string }>()
 
@@ -12,7 +10,6 @@ const button = ref<HTMLButtonElement>()
 const list = ref<HTMLElement>()
 const open = ref(false)
 const active = ref(0)
-// Места под кнопкой до края экрана мало — список раскрывается вверх.
 const dropUp = ref(false)
 const { element: screen } = useScreen()
 
@@ -50,7 +47,6 @@ function move(to: number) {
   scrollToActive()
 }
 
-// Первая буква — следующий пункт на неё, по кругу от текущего.
 function jumpTo(char: string) {
   const n = props.options.length
   const lower = char.toLowerCase()
@@ -76,7 +72,7 @@ function onKeydown(e: KeyboardEvent) {
     case 'Enter':
     case ' ': choose(active.value); break
     case 'Escape': hide(); break
-    case 'Tab': hide(false); return // фокус уходит дальше сам
+    case 'Tab': hide(false); return
     default:
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) jumpTo(e.key)
       return
@@ -84,7 +80,6 @@ function onKeydown(e: KeyboardEvent) {
   e.preventDefault()
 }
 
-// Клик или касание мимо — закрыть, фокус не забирать.
 function onOutside(e: PointerEvent) {
   if (!root.value?.contains(e.target as Node)) hide(false)
 }
@@ -97,7 +92,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
 
 <template>
   <div class="field">
-    <!-- Подпись, как у <label>: нажатие открывает список -->
     <span :id="`${id}-label`" class="label" @click="button?.focus(); show()">{{ label }}</span>
     <span ref="root" class="app-select" :class="{ open }">
       <button
@@ -140,12 +134,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
   display: grid;
 }
 
-/* Открытый список — поверх соседних панелей */
 .app-select.open {
   z-index: 10;
 }
 
-/* Кнопка выглядит как поле ввода: те же фон, рамка и нижняя черта */
 .trigger {
   display: flex;
   align-items: center;
@@ -179,7 +171,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
   text-overflow: ellipsis;
 }
 
-/* Уголок-указатель; у открытого — повёрнут */
 .chevron {
   flex: none;
   width: 7px;
@@ -225,13 +216,11 @@ li {
   color: var(--phosphor-secondary);
 }
 
-/* Подсвеченный пункт — под указателем или стрелками */
 li.active {
   background: var(--phosphor-faint);
   color: var(--phosphor);
 }
 
-/* Выбранный — с маркером, как курсор терминала */
 li[aria-selected='true'] {
   position: relative;
   color: var(--phosphor);

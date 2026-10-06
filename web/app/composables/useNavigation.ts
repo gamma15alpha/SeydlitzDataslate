@@ -1,11 +1,9 @@
-// Навигация (D61): разделы — вкладками на экране и кнопками на корпусе; хлебные крошки и «назад» — по адресу.
 export type IconName = 'sheet' | 'book' | 'user' | 'settings' | 'back'
 
 export interface Section {
   key: string
   path: string
   titleKey: string
-  /** Маркировка кнопки на корпусе — трафаретом, как PWR и PHOSPHOR. */
   stencil: string
   icon: IconName
 }
@@ -17,7 +15,7 @@ export const SECTIONS: Section[] = [
 
 const SCREEN_TABS_KEY = 'seydlitz.screenTabs'
 
-// Корпус полный (кнопки разделов на левой стойке видны) — обратное условию «тонкого» корпуса в casing.css.
+// Обратное условию тонкого корпуса в casing.css.
 const FULL_CASING = '(min-width: 901px) and (orientation: portrait), (min-width: 901px) and (min-height: 501px)'
 
 export function sectionOf(path: string): Section | undefined {
@@ -29,8 +27,6 @@ export interface Crumb {
   titleKey: string
 }
 
-// Заголовок страницы из данных (имя персонажа) вместо titleKey — для строки приложения и title вкладки.
-// Действует, пока открыт адрес, на котором его задали.
 export function usePageTitle(title: () => string | undefined) {
   const route = useRoute()
   const state = useState<{ path: string; title: string } | null>('nav:pageTitle', () => null)
@@ -55,12 +51,11 @@ export function useNavigation() {
     writeSetting(SCREEN_TABS_KEY, value ? 'on' : 'off')
   }
   const fullCasing = useMediaQuery(FULL_CASING)
-  // Выключить вкладки можно, только пока разделы есть на корпусе: иначе переключаться было бы нечем.
+  // Без кнопок на корпусе вкладки — единственный способ сменить раздел.
   const tabsVisible = computed(() => screenTabs.value || !fullCasing.value)
 
   const section = computed(() => sectionOf(route.path))
 
-  // Крошки — по префиксам адреса: /profile/sessions → Профиль › Сессии. Страница без titleKey в цепочку не входит.
   const crumbs = computed<Crumb[]>(() => {
     const parts = route.path.split('/').filter(Boolean)
     const paths = parts.length ? parts.map((_, i) => `/${parts.slice(0, i + 1).join('/')}`) : ['/']
@@ -70,13 +65,12 @@ export function useNavigation() {
     })
   })
   const pageTitle = useState<{ path: string; title: string } | null>('nav:pageTitle', () => null)
-  // Название текущей страницы: из данных (usePageTitle) или по titleKey.
   const title = computed(() => {
     if (pageTitle.value?.path === route.path) return pageTitle.value.title
     const key = crumbs.value.at(-1)?.titleKey
     return key ? t(key) : ''
   })
-  // «Назад» — на уровень выше, а не по истории браузера: предсказуемо и после перехода по ссылке извне.
+  // Вверх по адресу, а не по истории: предсказуемо и после перехода по внешней ссылке.
   const parent = computed(() => crumbs.value.at(-2)?.path ?? null)
 
   return { section, crumbs, parent, title, screenTabs, setScreenTabs, fullCasing, tabsVisible }

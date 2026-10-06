@@ -29,7 +29,6 @@ describe('termParts', () => {
 
   it('английский контент — без дубля', () => {
     expect(termParts(ag, 'en-GB')).toEqual({ abbreviation: 'Ag', name: 'Agility', english: undefined })
-    // Даже если британское название отличается от общего английского.
     expect(termParts({ id: 'x', name: { ru: 'Броня', en: 'Armor', 'en-GB': 'Armour' } }, 'en-GB').english).toBeUndefined()
   })
 

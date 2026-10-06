@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// Раздел «Справочник» — каталог контента; пока заглушка каркаса.
 definePageMeta({ titleKey: 'nav.reference' })
 const { t } = useI18n()
 </script>

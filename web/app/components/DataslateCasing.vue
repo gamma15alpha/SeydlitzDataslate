@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// Корпус датаслейта вокруг экрана (D10–D12): табличка, лампы, кнопки разделов (D61), ручка PHOSPHOR,
-// кнопка SCAN, ЖК-статус, ползунок языка LANG. Стили — assets/css/casing.css; приложение — в слоте, на экране.
 const { t, locale, locales, setLocale } = useI18n()
 const { phosphor, scanlines, busy, fault, setPhosphor, toggleScanlines } = useCasing()
 const { state: link } = useServerLink()
@@ -12,7 +10,6 @@ const position = computed(() => PHOSPHORS[index.value]!)
 
 const clamp = (i: number, count: number) => Math.min(count - 1, Math.max(0, i))
 
-// Стрелки, Home/End — у ручки и ползунка одинаково; дальше крайних положений не идут (упоры).
 const KEY_STEPS: Record<string, (i: number, count: number) => number> = {
   ArrowRight: i => i + 1,
   ArrowUp: i => i + 1,
@@ -29,7 +26,6 @@ function keyStep(e: KeyboardEvent, current: number, count: number): number | nul
   return clamp(step(current, count), count)
 }
 
-// Клик по ручке — по кругу, колесо — до упора.
 function turnTo(next: number) {
   setPhosphor(PHOSPHORS[clamp(next, PHOSPHORS.length)]!.name)
 }
@@ -47,8 +43,6 @@ function onKnobKey(e: KeyboardEvent) {
   if (next !== null) turnTo(next)
 }
 
-// Ползунок LANG: два положения, ручка ездит по прорези. Нажатие — в другое положение,
-// свайп — ручка идёт за пальцем (или мышью), отпустили — язык в сторону свайпа.
 const langIndex = computed(() => Math.max(0, locales.value.findIndex(l => l.code === locale.value)))
 
 async function setLang(i: number) {
@@ -56,12 +50,11 @@ async function setLang(i: number) {
   if (code && code !== locale.value) await setLocale(code)
 }
 
-const LANG_TRAVEL = 22 // ход ручки, px — как в casing.css
-const SWIPE_THRESHOLD = 6 // меньше — это нажатие, а не свайп
-// Положение ручки во время свайпа (0…1); null — ручка стоит у текущего языка.
+const LANG_TRAVEL = 22 // px, как в casing.css
+const SWIPE_THRESHOLD = 6
 const dragPos = ref<number | null>(null)
 let drag: { startX: number; startPos: number; dx: number; swiped: boolean } | null = null
-// После свайпа мышью браузер присылает ещё и click — его не считаем нажатием.
+// После свайпа мышью браузер присылает ещё и click.
 let swallowClick = false
 
 function onLangPointerDown(e: PointerEvent) {
@@ -83,9 +76,8 @@ async function onLangPointerUp() {
   if (!drag) return
   const { swiped, dx, startPos } = drag
   drag = null
-  if (!swiped) return // нажатие — обработает click
+  if (!swiped) return
   swallowClick = true
-  // Решает направление: увели и вернули к началу — язык прежний.
   const target = Math.abs(dx) < SWIPE_THRESHOLD ? startPos : dx > 0 ? 1 : 0
   dragPos.value = target
   await setLang(target)
@@ -107,7 +99,6 @@ function onLangKey(e: KeyboardEvent) {
   if (next !== null) void setLang(next)
 }
 
-// VOX: горит — сервер на связи, мигает красным — сеть есть, а сервер не отвечает, погашена — нет сети.
 const status = computed(() => {
   if (fault.value) return t('casing.fault')
   switch (link.value) {
@@ -120,7 +111,6 @@ const status = computed(() => {
 </script>
 
 <template>
-  <!-- Общие SVG-символы: шестерня Механикус -->
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
       <mask id="cog-hole">
@@ -140,7 +130,6 @@ const status = computed(() => {
   </svg>
 
   <div class="housing">
-    <!-- Верхняя панель: табличка, клеймо, сигнальные лампы, динамик -->
     <header class="deck deck-top">
       <span class="screw" style="--r: 18deg" aria-hidden="true" />
 
@@ -178,10 +167,8 @@ const status = computed(() => {
       <span class="screw" style="--r: -34deg" aria-hidden="true" />
     </header>
 
-    <!-- Левая стойка: клавиши разделов, кабельные трубы и вентиляция -->
     <aside class="column column-left">
       <span class="screw" style="--r: 62deg" aria-hidden="true" />
-      <!-- Те же разделы, что вкладки на экране; без входа — неактивны -->
       <nav class="section-keys" :aria-label="t('nav.sections')">
         <div v-for="s in SECTIONS" :key="s.key" class="control">
           <button
@@ -205,7 +192,6 @@ const status = computed(() => {
       <span class="screw" style="--r: -8deg" aria-hidden="true" />
     </aside>
 
-    <!-- Экран в рамке -->
     <div class="bezel">
       <span class="screw bezel-screw tl" style="--r: 40deg" aria-hidden="true" />
       <span class="screw bezel-screw tr" style="--r: -12deg" aria-hidden="true" />
@@ -223,11 +209,9 @@ const status = computed(() => {
       </div>
     </div>
 
-    <!-- Правая стойка: органы управления и печать чистоты -->
     <aside class="column column-right">
       <span class="screw" style="--r: -50deg" aria-hidden="true" />
 
-      <!-- Переключатель люминофора: метки шкалы и ручка-указатель -->
       <div class="control">
         <div class="phosphor-selector">
           <button
@@ -267,7 +251,6 @@ const status = computed(() => {
       <span class="screw" style="--r: 27deg" aria-hidden="true" />
     </aside>
 
-    <!-- Нижняя панель: разметка, разъёмы, индикатор статуса -->
     <footer class="deck deck-bottom">
       <span class="screw" style="--r: 81deg" aria-hidden="true" />
       <span class="hazard" aria-hidden="true" />
@@ -278,11 +261,13 @@ const status = computed(() => {
       </span>
       <span class="deck-spacer" />
       <div class="lcd">
-        <span class="lcd-text" :class="{ fail: fault || link === 'down' }" role="status">{{ status }}</span>
+        <button v-if="$pwa?.needRefresh" class="lcd-text lcd-update" type="button" @click="$pwa.updateServiceWorker(true)">
+          {{ t('casing.update') }}
+        </button>
+        <span v-else class="lcd-text" :class="{ fail: fault || link === 'down' }" role="status">{{ status }}</span>
       </div>
       <span class="deck-spacer" />
 
-      <!-- Ползунок языка: метки по краям прорези, ручка у выбранной -->
       <div class="control">
         <div class="lang-selector">
           <button class="lang-mark" :class="{ active: langIndex === 0 }" type="button" tabindex="-1" aria-hidden="true" @click="setLang(0)">

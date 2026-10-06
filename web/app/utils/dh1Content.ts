@@ -1,4 +1,4 @@
-// Содержимое пакета DH1 — schemas/dh1-content.schema.json.
+// schemas/dh1-content.schema.json
 export interface Dh1Content {
   characteristics?: CatalogEntry[]
   rules?: CatalogEntry[]
@@ -13,7 +13,7 @@ export interface Dh1Content {
   })[]
 }
 
-// Лист DH1 (sheetVersion 4) — schemas/dh1-sheet.schema.json.
+// schemas/dh1-sheet.schema.json, sheetVersion 4
 export type Choice = { id: string } | { custom: string }
 
 export interface Dh1Sheet {
@@ -25,7 +25,6 @@ export interface Dh1Sheet {
   skills?: { skill: string; specialization?: Choice; training?: number }[]
 }
 
-// Ссылка dataslate:<раздел>/<id>; ранги ищутся во всех карьерах, специализации — во всех навыках.
 export function findEntry(content: Dh1Content, ref: string): CatalogEntry | undefined {
   const [section, id] = ref.split('/')
   const byId = (list?: CatalogEntry[]) => list?.find(e => e.id === id)

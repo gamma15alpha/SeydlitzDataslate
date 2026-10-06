@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// Настройки приложения. Вид экрана (люминофор, сканлайны) — только на корпусе.
 definePageMeta({ titleKey: 'nav.settings' })
 const { t } = useI18n()
 const { screenTabs, setScreenTabs } = useNavigation()
 const { setting: contentLang, setContentLang } = useContentLocale()
-// Названия языков — на самих языках: их узнают и без знания текущего.
+// На самих языках: узнают и без знания текущего.
 const contentLangOptions = computed<{ value: ContentLang; label: string }[]>(() => [
   { value: 'ui', label: t('demo.contentLangUi') },
   { value: 'ru', label: 'Русский' },

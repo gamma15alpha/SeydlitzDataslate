@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// Лист DH1: шапка, характеристики, навыки; термины открывают справки. Пока — только просмотр демо-анкеты.
 const props = defineProps<{ character: Character }>()
 const { t } = useI18n()
 
@@ -26,15 +25,13 @@ const skills = computed(() => (sheet.skills ?? []).map((s, i) => ({
   training: s.training ?? 1,
 })))
 
-// Ширина — экрана корпуса, не окна. Экран от 760px (или от 500px с мышью) — справки в перетаскиваемых окнах,
-// ссылка открывает окно рядом; сенсорный 500–759px — панель справа, уже — панель снизу; у панелей стек «Назад».
+// Справки: окна на широком экране или с мышью, иначе панель со стеком «Назад».
 const { size: screen } = useScreen()
 const finePointer = useMediaQuery('(pointer: fine)')
 const desktop = computed(() => screen.width >= 760 || (screen.width >= 500 && finePointer.value))
 const WINDOW_WIDTH = 380
 const GAP = 12
 
-// Телефон: последняя — на экране, «Назад» снимает её.
 const opened = ref<CatalogEntry[]>([])
 
 interface RefWindow { key: number; entry: CatalogEntry; x: number; y: number; z: number }
@@ -46,7 +43,6 @@ function focus(w: RefWindow) {
   w.z = ++topZ
 }
 
-// Уже открытая справка поднимается наверх вместо дубля.
 function openWindow(entry: CatalogEntry, from?: RefWindow) {
   const existing = windows.value.find(w => w.entry.id === entry.id)
   if (existing) return focus(existing)
@@ -206,7 +202,6 @@ ul {
   list-style: none;
 }
 
-/* Узкий экран: описание — панель снизу поверх анкеты. */
 @container screen (max-width: 499px) {
   .demo.with-article {
     grid-template-columns: 1fr;

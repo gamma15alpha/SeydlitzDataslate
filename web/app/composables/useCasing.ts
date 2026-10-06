@@ -1,5 +1,3 @@
-// Состояние корпуса датаслейта: люминофор и сканлайны (D9, D11), лампы и ЖК-статус.
-// Настройки — в localStorage под теми же ключами, что в версии на Avalonia.
 export type Phosphor = 'green' | 'amber' | 'white'
 
 export const PHOSPHORS: { name: Phosphor; mark: string; label: string; color: string; angle: number }[] = [
@@ -8,6 +6,7 @@ export const PHOSPHORS: { name: Phosphor; mark: string; label: string; color: st
   { name: 'white', mark: 'P4', label: 'P4, white', color: '#e8f1ff', angle: 55 },
 ]
 
+// Ключи — как в версии на Avalonia.
 const PHOSPHOR_KEY = 'seydlitz.phosphor'
 const SCANLINES_KEY = 'seydlitz.scanlines'
 

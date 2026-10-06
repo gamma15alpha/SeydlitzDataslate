@@ -6,7 +6,7 @@ interface RenderEnv {
   asset?: (path: string) => string | undefined
 }
 
-// html: false — пакет контента не может вставить свою разметку и скрипты.
+// Пакет контента не должен вставлять свою разметку и скрипты.
 const md = new MarkdownIt({ html: false, linkify: false })
 
 md.renderer.rules.link_open = (tokens, i, options, _env, self) => {
@@ -22,7 +22,7 @@ md.renderer.rules.link_open = (tokens, i, options, _env, self) => {
   return self.renderToken(tokens, i, options)
 }
 
-// Широкая таблица прокручивается сама, а не растягивает страницу на телефоне.
+// Широкая таблица не растягивает страницу на телефоне.
 md.renderer.rules.table_open = () => '<div class="table-scroll"><table>\n'
 md.renderer.rules.table_close = () => '</table></div>\n'
 
@@ -38,7 +38,6 @@ md.renderer.rules.image = (tokens, i, options, env, self) => {
   return defaultImage(tokens, i, options, env, self)
 }
 
-// asset — URL картинки из пакета по пути assets/…; нет — вместо картинки её подпись.
 export function renderMarkdown(source: string, asset?: RenderEnv['asset']): string {
   return md.render(source, { asset } satisfies RenderEnv)
 }

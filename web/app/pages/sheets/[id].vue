@@ -3,7 +3,6 @@ definePageMeta({ titleKey: 'nav.sheet' })
 const { t } = useI18n()
 const route = useRoute()
 const character = computed(() => findDemoCharacter(String(route.params.id)))
-// В строке приложения — имя персонажа, а не безликое «Анкета».
 usePageTitle(() => character.value?.name)
 </script>
 

@@ -1,9 +1,9 @@
-// localizedText из schemas/content.schema.json: строка (русский оригинал) или переводы по тегу BCP 47.
+// schemas/content.schema.json
 export type LocalizedText = string | Record<string, string>
 
 const ORIGINAL = 'ru'
 
-// Правило из схемы: язык → его основной язык (en-GB → en) → ru → en → первый по порядку.
+// Порядок — из схемы, Android выбирает так же.
 export function pickText(text: LocalizedText, lang: string): string {
   if (typeof text === 'string') return text
   const base = lang.split('-')[0]!
@@ -17,7 +17,6 @@ export interface CatalogEntry {
   description?: LocalizedText
 }
 
-// Ag · Ловкость · Agility: английский дубль — только если язык контента не английский и название другое.
 export function termParts(entry: CatalogEntry, lang: string) {
   const name = pickText(entry.name, lang)
   const english = lang.split('-')[0] === 'en' ? undefined : pickText(entry.name, 'en')
@@ -28,7 +27,6 @@ export function termParts(entry: CatalogEntry, lang: string) {
   }
 }
 
-// Все варианты текста — для сверки с оригиналом без смены языка; оригинал первым.
 export function allTexts(text: LocalizedText): [lang: string, text: string][] {
   if (typeof text === 'string') return [[ORIGINAL, text]]
   return Object.entries(text).sort(([a], [b]) => Number(b === ORIGINAL) - Number(a === ORIGINAL))

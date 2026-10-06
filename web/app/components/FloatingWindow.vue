@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{ x: number; y: number; z: number }>()
 const emit = defineEmits<{ move: [x: number, y: number]; focus: [] }>()
-// Окно живёт на экране корпуса: координаты и пределы — от него (position: fixed внутри .screen).
 const { size: screen } = useScreen()
 const MIN_WIDTH = 260
 const MIN_HEIGHT = 160
@@ -9,8 +8,7 @@ const width = ref(380)
 const height = ref(Math.min(480, Math.round(screen.height * 0.7)))
 const dragging = ref(false)
 
-// Указатель (мышь или палец) захватывается элементом, пока не отпустят. Пока тянут — класс на <html>:
-// курсор на всей странице не мигает, текст под окном не выделяется.
+// Класс на <html>: курсор не мигает, текст под окном не выделяется.
 function track(e: PointerEvent, cursorClass: string, onMove: (ev: PointerEvent) => void, onEnd?: () => void) {
   e.preventDefault()
   const handle = e.currentTarget as HTMLElement
@@ -28,7 +26,6 @@ function track(e: PointerEvent, cursorClass: string, onMove: (ev: PointerEvent) 
   handle.addEventListener('pointercancel', stop)
 }
 
-// Перетаскивание за заголовок: содержимое вызывает grab на pointerdown. Заголовок не уходит за край экрана корпуса.
 function grab(e: PointerEvent) {
   if ((e.target as HTMLElement).closest('button, a, input, select')) return
   const dx = e.clientX - props.x
@@ -40,7 +37,7 @@ function grab(e: PointerEvent) {
   ), () => (dragging.value = false))
 }
 
-// Свой уголок вместо CSS resize: тот не работает пальцем.
+// CSS resize не работает пальцем.
 function resize(e: PointerEvent) {
   const startX = e.clientX
   const startY = e.clientY
@@ -73,7 +70,6 @@ function resize(e: PointerEvent) {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85), 0 0 12px var(--phosphor-glow);
 }
 
-/* Уголок: видимый треугольник 12px, зона нажатия 24px (на сенсорном экране — 44px). */
 .resize-grip {
   position: absolute;
   right: 0;

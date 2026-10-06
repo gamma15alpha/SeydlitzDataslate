@@ -2,6 +2,7 @@
 definePageMeta({ titleKey: 'nav.profile' })
 const { t } = useI18n()
 const auth = useAuth()
+const { available } = useServerLink()
 const error = ref<string | null>(null)
 
 async function logout() {
@@ -16,7 +17,6 @@ async function logout() {
       <p class="muted">
         {{ auth.user.value?.login }}<template v-if="auth.user.value?.isAdmin"> · {{ t('profile.admin') }}</template>
       </p>
-      <p v-if="auth.offline.value" class="warning">{{ t('auth.offline') }}</p>
     </section>
 
     <nav class="links">
@@ -27,7 +27,8 @@ async function logout() {
     </nav>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <button type="button" class="alert" @click="logout">{{ t('auth.logout') }}</button>
+    <ServerNotice />
+    <button type="button" class="alert" :disabled="!available" @click="logout">{{ t('auth.logout') }}</button>
   </div>
 </template>
 

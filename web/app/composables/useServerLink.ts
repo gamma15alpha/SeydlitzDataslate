@@ -1,9 +1,3 @@
-// Связь с сервером для лампы VOX: опрос /api/health раз в 30 с, пока вкладка видна, и сразу — при возврате
-// на вкладку, появлении сети и сбое запроса к API. Опрос идёт мимо клиента API: ACT не мигает на каждый пульс.
-//   up      — сервер ответил «ok»;
-//   down    — сеть есть, а сервер не отвечает, отвечает ошибкой или прокси не достучался (502–504);
-//   offline — у браузера нет сети;
-//   unknown — ещё не проверяли.
 export type LinkState = 'unknown' | 'up' | 'down' | 'offline'
 
 const POLL_MS = 30_000
@@ -19,6 +13,7 @@ async function probe() {
     return
   }
   try {
+    // Мимо клиента API: ACT не мигает на каждый опрос.
     const response = await fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) })
     const body = response.ok ? await response.json().catch(() => null) : null
     state.value = body?.status === 'ok' ? 'up' : 'down'
@@ -27,12 +22,11 @@ async function probe() {
   }
 }
 
-// Параллельные поводы проверить сливаются в один запрос.
 export function checkServer() {
   return (inflight ??= probe().finally(() => (inflight = undefined)))
 }
 
-// Ответ на обычный запрос к API — тоже сведения о связи: 502–504 — прокси не достучался до сервера.
+// 502–504 — прокси не достучался до сервера.
 export function reportApiResponse(status: number) {
   if (status >= 502 && status <= 504) void checkServer()
   else state.value = 'up'
@@ -52,6 +46,9 @@ export function startServerLink() {
   window.addEventListener('offline', () => (state.value = 'offline'))
 }
 
+// unknown — доступен: кнопки не мигают при запуске.
+const available = computed(() => state.value !== 'down' && state.value !== 'offline')
+
 export function useServerLink() {
-  return { state: readonly(state), check: checkServer }
+  return { state: readonly(state), available, check: checkServer }
 }

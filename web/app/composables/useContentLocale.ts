@@ -1,4 +1,3 @@
-// Язык контента отдельно от языка интерфейса: например, интерфейс на английском, а правила — в оригинале.
 export type ContentLang = 'ui' | 'ru' | 'en'
 
 const STORAGE_KEY = 'dataslate:content-lang'

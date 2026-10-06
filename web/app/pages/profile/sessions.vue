@@ -9,6 +9,7 @@ const { t, locale } = useI18n()
 const sessions = ref<SessionInfo[]>([])
 const error = ref<string | null>(null)
 const busy = ref(false)
+const { available } = useServerLink()
 const dateFormat = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }))
 
 async function load(actionError: string | null = null) {
@@ -46,7 +47,12 @@ function device(ua: string) {
   return [browser, os].filter(Boolean).join(', ') || ua || t('sessions.unknownDevice')
 }
 
-onMounted(() => load())
+onMounted(() => {
+  if (available.value) void load()
+})
+watch(available, (value) => {
+  if (value) void load()
+})
 </script>
 
 <template>
@@ -60,11 +66,12 @@ onMounted(() => load())
         <div class="muted">
           {{ t('sessions.dates', { created: dateFormat.format(new Date(s.createdAt)), used: dateFormat.format(new Date(s.lastUsedAt)) }) }}
         </div>
-        <button v-if="!s.current" type="button" :disabled="busy" @click="end(s.id)">{{ t('sessions.end') }}</button>
+        <button v-if="!s.current" type="button" :disabled="busy || !available" @click="end(s.id)">{{ t('sessions.end') }}</button>
       </li>
     </ul>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <button v-if="sessions.length > 1" type="button" :disabled="busy" @click="endOthers">{{ t('sessions.endOthers') }}</button>
+    <ServerNotice />
+    <p v-if="error && available" class="error" role="alert">{{ error }}</p>
+    <button v-if="sessions.length > 1" type="button" :disabled="busy || !available" @click="endOthers">{{ t('sessions.endOthers') }}</button>
   </div>
 </template>
 

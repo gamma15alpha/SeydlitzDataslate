@@ -37,7 +37,7 @@ async function submit() {
 <template>
   <div class="page">
     <FormPanel :submit-label="t('profile.changePasswordSubmit')" :busy="busy" :error="error" :success="success" @submit="submit">
-      <!-- Логин в скрытом поле — менеджер паролей поймёт, для какой учётной записи новый пароль -->
+      <!-- Для менеджера паролей: чей это пароль -->
       <input type="text" name="username" autocomplete="username" :value="auth.user.value?.login" hidden readonly>
       <label>
         {{ t('profile.currentPassword') }}

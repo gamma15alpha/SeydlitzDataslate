@@ -2,24 +2,24 @@
 import type { components } from '~/api/schema'
 import { api } from '~/api/client'
 
-// Приглашения — только администратору (сервер проверяет сам; здесь — чтобы не показывать пустую форму).
+// Сервер проверяет сам; здесь — чтобы не показывать пустую форму.
 definePageMeta({ titleKey: 'nav.invites' })
 type Invite = components['schemas']['Invite']
 const { t, locale } = useI18n()
 const auth = useAuth()
 const isAdmin = computed(() => auth.user.value?.isAdmin ?? false)
+const { available } = useServerLink()
 
 const EXPIRY_DAYS = [1, 3, 7, 14, 30, 90]
 const expiresInDays = ref(7)
 const invites = ref<Invite[]>([])
-// Код показывается один раз — в ответе на создание; сервер хранит только хеш.
+// Код есть только в ответе на создание: сервер хранит хеш.
 const created = ref<{ code: string; link: string } | null>(null)
 const copied = ref<'code' | 'link' | null>(null)
 const busy = ref(false)
 const error = ref<string | null>(null)
 const dateFormat = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }))
 const format = (iso: string) => dateFormat.value.format(new Date(iso))
-// «1 день / 3 дня / 7 дней»: форма числа — по правилам языка (Intl), тексты форм — в i18n.
 const plural = computed(() => new Intl.PluralRules(locale.value))
 const days = (n: number) => t(`invites.days.${plural.value.select(n)}`, { n })
 const expiryOptions = computed(() => EXPIRY_DAYS.map(d => ({ value: d, label: days(d) })))
@@ -77,7 +77,10 @@ async function copy(what: 'code' | 'link') {
 }
 
 onMounted(() => {
-  if (isAdmin.value) void load()
+  if (isAdmin.value && available.value) void load()
+})
+watch(available, (value) => {
+  if (value && isAdmin.value) void load()
 })
 </script>
 
@@ -87,7 +90,8 @@ onMounted(() => {
     <template v-else>
       <form class="panel create" @submit.prevent="create">
         <AppSelect v-model="expiresInDays" :label="t('invites.expiresIn')" :options="expiryOptions" />
-        <button type="submit" :disabled="busy">{{ t('invites.create') }}</button>
+        <ServerNotice />
+        <button type="submit" :disabled="busy || !available">{{ t('invites.create') }}</button>
 
         <div v-if="created" class="created" role="status">
           <p class="warning">{{ t('invites.showOnce') }}</p>
@@ -104,10 +108,10 @@ onMounted(() => {
         </div>
       </form>
 
-      <p v-if="error" class="error" role="alert">{{ error }}</p>
+      <p v-if="error && available" class="error" role="alert">{{ error }}</p>
 
       <ul class="list">
-        <li v-if="!invites.length" class="muted">{{ t('invites.none') }}</li>
+        <li v-if="!invites.length && available" class="muted">{{ t('invites.none') }}</li>
         <li v-for="i in invites" :key="i.id" class="panel invite">
           <div>
             <span :class="['status', status(i)]">{{ t(`invites.status.${status(i)}`) }}</span>
@@ -118,7 +122,7 @@ onMounted(() => {
           <div class="muted dates">
             {{ t('invites.dates', { created: format(i.createdAt), expires: format(i.expiresAt) }) }}
           </div>
-          <button v-if="!i.usedAt" type="button" class="alert" :disabled="busy" @click="revoke(i.id)">{{ t('invites.revoke') }}</button>
+          <button v-if="!i.usedAt" type="button" class="alert" :disabled="busy || !available" @click="revoke(i.id)">{{ t('invites.revoke') }}</button>
         </li>
       </ul>
     </template>
@@ -156,7 +160,7 @@ p {
   border-top: 1px solid var(--panel-border);
 }
 
-/* Код и ссылка: перенос по любому месту — длинная ссылка не растягивает панель */
+/* Длинная ссылка не растягивает панель */
 .secret {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

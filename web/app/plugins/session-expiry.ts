@@ -1,6 +1,5 @@
 import { api } from '~/api/client'
 
-// Сессия истекла или отозвана посреди работы — на вход, с возвратом на текущую страницу.
 export default defineNuxtPlugin(() => {
   const auth = useAuth()
   const router = useRouter()

@@ -1,12 +1,10 @@
 <script setup lang="ts">
-// Раздел «Анкеты»: список персонажей. Пока заготовка — анкеты из примеров, создание и импорт ещё не работают.
 definePageMeta({ titleKey: 'nav.sheets' })
 const { t, locale } = useI18n()
 const { text } = useContentLocale()
 
 const dateFormat = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }))
 
-// Карьера · ранг: значение из каталога — на языке контента, своё — как ввёл игрок.
 function choiceText(section: string, value?: Choice) {
   if (!value) return undefined
   if ('custom' in value) return value.custom
@@ -83,7 +81,6 @@ const cards = computed(() => demoCharacters.map((c) => {
   list-style: none;
 }
 
-/* Карточка — вся ссылка: нажать можно в любом месте */
 .card {
   display: grid;
   gap: 6px;
