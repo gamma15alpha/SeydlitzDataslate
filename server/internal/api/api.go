@@ -1,5 +1,5 @@
 // Package api — HTTP API сервера; контракт — schemas/openapi.yaml.
-// Только перевод между HTTP и сценариями (account, session, invite): разбор запроса, вызов, ошибка → статус и код.
+// Только перевод между HTTP и сценариями (account, session, invite, blob): разбор запроса, вызов, ошибка → статус и код.
 package api
 
 import (
@@ -64,6 +64,9 @@ func NewHandler(cfg Config) http.Handler {
 			r.Get("/me", s.me)
 			r.Put("/me/login", s.changeLogin)
 			r.Put("/me/password", s.changePassword)
+			r.Put("/me/avatar", s.setAvatar)
+			r.Delete("/me/avatar", s.removeAvatar)
+			r.Get("/blobs/{sha256}", s.getBlob)
 			r.Get("/sessions", s.listSessions)
 			r.Delete("/sessions", s.deleteOtherSessions)
 			r.Delete("/sessions/{id}", s.deleteSession)

@@ -10,6 +10,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type Blob struct {
+	Sha256    []byte
+	Mime      string
+	Bytes     []byte
+	CreatedAt time.Time
+}
+
 type Invite struct {
 	ID        uuid.UUID
 	CodeHash  []byte
@@ -40,4 +47,5 @@ type User struct {
 	PasswordHash string
 	IsAdmin      bool
 	CreatedAt    time.Time
+	AvatarSha256 []byte
 }

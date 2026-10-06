@@ -137,6 +137,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Поставить аватар
+         * @description Тело — сама картинка (PNG, JPEG или WebP, до 5 МБ и 8000 px по стороне). Сервер вырезает квадрат
+         *     из середины, уменьшает до 256 px и сохраняет заново в JPEG (без метаданных). Прежний аватар
+         *     удаляется автоматически, если на него больше ничто не ссылается.
+         */
+        put: operations["setAvatar"];
+        post?: never;
+        /** Убрать аватар */
+        delete: operations["removeAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/blobs/{sha256}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Картинка по хешу
+         * @description Аватары (и позже портреты) — по SHA-256 содержимого. Содержимое под хешем не меняется:
+         *     `Cache-Control: private, max-age=31536000, immutable`, `ETag` — хеш в кавычках.
+         */
+        get: operations["getBlob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites": {
         parameters: {
             query?: never;
@@ -235,7 +279,11 @@ export interface components {
         /** @description Уникален без учёта регистра. */
         Login: string;
         Password: string;
+        /** @description SHA-256 в hex, строчными. */
+        Sha256: string;
         User: {
+            /** @description Аватар — GET /api/blobs/{sha256}; null — нет. */
+            avatar: components["schemas"]["Sha256"] | null;
             /** Format: uuid */
             id: string;
             login: components["schemas"]["Login"];
@@ -514,6 +562,92 @@ export interface operations {
             /** @description `wrong_password` — неверный текущий пароль. */
             403: components["responses"]["Error"];
             429: components["responses"]["TooManyAttempts"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    setAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/png": unknown;
+                "image/jpeg": unknown;
+                "image/webp": unknown;
+            };
+        };
+        responses: {
+            /** @description Аватар изменён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description `invalid_image` — не PNG, JPEG или WebP либо файл повреждён. */
+            400: components["responses"]["Error"];
+            /** @description `too_large` — больше 5 МБ или 8000 px по стороне. */
+            413: components["responses"]["Error"];
+            /** @description `unsupported_media_type` — Content-Type не image/png, image/jpeg или image/webp. */
+            415: components["responses"]["Error"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    removeAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Аватар убран. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    getBlob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sha256: components["schemas"]["Sha256"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Картинка. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                };
+            };
+            /** @description Не изменилась (`If-None-Match`). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `not_found`. */
+            404: components["responses"]["Error"];
             "4XX": components["responses"]["Error"];
         };
     };

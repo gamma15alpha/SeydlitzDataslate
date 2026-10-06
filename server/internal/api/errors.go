@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/blob"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/invite"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/session"
 )
@@ -32,7 +33,11 @@ func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusBadRequest, "invalid_invite", err.Error())
 	case errors.Is(err, invite.ErrInvalidExpiry):
 		writeError(w, http.StatusBadRequest, "invalid_expiry", err.Error())
-	case errors.Is(err, invite.ErrNotFound), errors.Is(err, session.ErrNotFound):
+	case errors.Is(err, blob.ErrInvalidImage):
+		writeError(w, http.StatusBadRequest, "invalid_image", err.Error())
+	case errors.Is(err, blob.ErrTooLarge):
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", err.Error())
+	case errors.Is(err, invite.ErrNotFound), errors.Is(err, session.ErrNotFound), errors.Is(err, blob.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	default:
 		internalError(w, r, err)

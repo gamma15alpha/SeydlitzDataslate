@@ -29,6 +29,7 @@ cmd/server/        запуск, CLI
 internal/account/  учётные записи
 internal/session/  сессии
 internal/invite/   инвайты
+internal/blob/     картинки по SHA-256, автоочистка
 internal/api/      HTTP; ошибки сценариев → статусы (errors.go)
 internal/auth/     argon2id, секреты, лимитер
 internal/db/       подключение, миграции; dbq/ — код sqlc

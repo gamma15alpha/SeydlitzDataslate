@@ -85,7 +85,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (login, display_name, password_hash, is_admin)
 VALUES ($1, $2, $3, $4)
-RETURNING id, login, display_name, password_hash, is_admin, created_at
+RETURNING id, login, display_name, password_hash, is_admin, created_at, avatar_sha256
 `
 
 type CreateUserParams struct {
@@ -110,6 +110,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.IsAdmin,
 		&i.CreatedAt,
+		&i.AvatarSha256,
 	)
 	return i, err
 }
@@ -183,7 +184,7 @@ func (q *Queries) DeleteUserSession(ctx context.Context, arg DeleteUserSessionPa
 }
 
 const findSession = `-- name: FindSession :one
-SELECT users.id, users.login, users.display_name, users.password_hash, users.is_admin, users.created_at,
+SELECT users.id, users.login, users.display_name, users.password_hash, users.is_admin, users.created_at, users.avatar_sha256,
        sessions.id AS session_id,
        sessions.created_at AS session_created_at,
        sessions.expires_at AS session_expires_at,
@@ -223,6 +224,7 @@ func (q *Queries) FindSession(ctx context.Context, arg FindSessionParams) (FindS
 		&i.User.PasswordHash,
 		&i.User.IsAdmin,
 		&i.User.CreatedAt,
+		&i.User.AvatarSha256,
 		&i.SessionID,
 		&i.SessionCreatedAt,
 		&i.SessionExpiresAt,
@@ -235,7 +237,7 @@ func (q *Queries) FindSession(ctx context.Context, arg FindSessionParams) (FindS
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, login, display_name, password_hash, is_admin, created_at FROM users WHERE lower(login) = lower($1)
+SELECT id, login, display_name, password_hash, is_admin, created_at, avatar_sha256 FROM users WHERE lower(login) = lower($1)
 `
 
 func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
@@ -248,6 +250,7 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.PasswordHash,
 		&i.IsAdmin,
 		&i.CreatedAt,
+		&i.AvatarSha256,
 	)
 	return i, err
 }
@@ -414,7 +417,7 @@ func (q *Queries) TouchSession(ctx context.Context, arg TouchSessionParams) erro
 
 const updateUserLogin = `-- name: UpdateUserLogin :one
 UPDATE users SET login = $1 WHERE id = $2
-RETURNING id, login, display_name, password_hash, is_admin, created_at
+RETURNING id, login, display_name, password_hash, is_admin, created_at, avatar_sha256
 `
 
 type UpdateUserLoginParams struct {
@@ -432,6 +435,7 @@ func (q *Queries) UpdateUserLogin(ctx context.Context, arg UpdateUserLoginParams
 		&i.PasswordHash,
 		&i.IsAdmin,
 		&i.CreatedAt,
+		&i.AvatarSha256,
 	)
 	return i, err
 }

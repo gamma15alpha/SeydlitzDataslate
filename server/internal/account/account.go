@@ -1,4 +1,4 @@
-// Package account — учётные записи: регистрация по инвайту, вход, смена логина и пароля, создание администратора.
+// Package account — учётные записи: регистрация по инвайту, вход, смена логина и пароля, аватар, создание администратора.
 // Про HTTP не знает: ошибки — значения ниже, их перевод в статусы и коды — забота api.
 package account
 
@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/auth"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/blob"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/invite"
@@ -287,6 +288,33 @@ func (s *Service) ChangePassword(ctx context.Context, user dbq.User, keepSession
 	}
 	slog.InfoContext(ctx, "password changed", "other_sessions_ended", ended)
 	return nil
+}
+
+// SetAvatar перекодирует картинку (blob.Avatar) и ставит её аватаром. Прежний аватар уберёт очистка.
+func (s *Service) SetAvatar(ctx context.Context, user dbq.User, data []byte) (dbq.User, error) {
+	avatar, err := blob.Avatar(data) // до транзакции: декодирование и масштабирование — работа процессора
+	if err != nil {
+		return dbq.User{}, err
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return dbq.User{}, err
+	}
+	defer tx.Rollback(ctx)
+	q := s.q.WithTx(tx)
+	sum, err := blob.Put(ctx, q, "image/jpeg", avatar)
+	if err != nil {
+		return dbq.User{}, err
+	}
+	updated, err := q.SetUserAvatar(ctx, dbq.SetUserAvatarParams{ID: user.ID, AvatarSha256: sum})
+	if err != nil {
+		return dbq.User{}, err
+	}
+	return updated, tx.Commit(ctx)
+}
+
+func (s *Service) RemoveAvatar(ctx context.Context, user dbq.User) (dbq.User, error) {
+	return s.q.SetUserAvatar(ctx, dbq.SetUserAvatarParams{ID: user.ID})
 }
 
 // CreateAdmin — первый администратор (CLI). Без инвайта и без сессии.

@@ -20,6 +20,7 @@ import (
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/api"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/blob"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/logging"
@@ -87,7 +88,9 @@ func serve(ctx context.Context) error {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	go cleanupSessions(ctx, dbq.New(pool))
+	q := dbq.New(pool)
+	go cleanupHourly(ctx, "expired sessions", func(ctx context.Context) (int64, error) { return session.Cleanup(ctx, q) })
+	go cleanupHourly(ctx, "unused images", func(ctx context.Context) (int64, error) { return blob.Cleanup(ctx, q, time.Now()) })
 
 	serveErr := make(chan error, 1)
 	go func() {
@@ -113,15 +116,15 @@ func serve(ctx context.Context) error {
 	return nil
 }
 
-func cleanupSessions(ctx context.Context, q *dbq.Queries) {
+func cleanupHourly(ctx context.Context, what string, cleanup func(context.Context) (int64, error)) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	for {
-		n, err := session.Cleanup(ctx, q)
+		n, err := cleanup(ctx)
 		if err != nil && ctx.Err() == nil {
-			slog.Error("cleanup sessions", "err", err)
+			slog.Error("cleanup failed", "what", what, "err", err)
 		} else if n > 0 {
-			slog.Info("expired sessions removed", "count", n)
+			slog.Info("cleanup", "what", what, "removed", n)
 		}
 		select {
 		case <-ctx.Done():

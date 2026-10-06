@@ -16,7 +16,7 @@ info:
     новый не использован, и минуту после. Старый токен позже означает кражу: сессия
     отзывается, ответ — `401` с кодом `session_revoked`.
 
-    Запросы с телом — только `Content-Type: application/json`.
+    Запросы с телом — только `Content-Type: application/json`; исключение — картинки (`PUT /api/me/avatar`).
 
     У каждого ответа есть заголовок `X-Request-ID` — по нему в логах сервера находятся
     все записи этого запроса; клиентам стоит показывать его в сообщениях об ошибках.
@@ -225,6 +225,84 @@ paths:
         "4XX":
           $ref: "#/components/responses/Error"
 
+  /api/me/avatar:
+    put:
+      operationId: setAvatar
+      summary: Поставить аватар
+      description: |
+        Тело — сама картинка (PNG, JPEG или WebP, до 5 МБ и 8000 px по стороне). Сервер вырезает квадрат
+        из середины, уменьшает до 256 px и сохраняет заново в JPEG (без метаданных). Прежний аватар
+        удаляется автоматически, если на него больше ничто не ссылается.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema: {}
+          image/jpeg:
+            schema: {}
+          image/webp:
+            schema: {}
+      responses:
+        "200":
+          description: Аватар изменён.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_image` — не PNG, JPEG или WebP либо файл повреждён."
+        "413":
+          $ref: "#/components/responses/Error"
+          description: "`too_large` — больше 5 МБ или 8000 px по стороне."
+        "415":
+          $ref: "#/components/responses/Error"
+          description: "`unsupported_media_type` — Content-Type не image/png, image/jpeg или image/webp."
+        "4XX":
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: removeAvatar
+      summary: Убрать аватар
+      tags: [auth]
+      responses:
+        "200":
+          description: Аватар убран.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/blobs/{sha256}:
+    get:
+      operationId: getBlob
+      summary: Картинка по хешу
+      description: |
+        Аватары (и позже портреты) — по SHA-256 содержимого. Содержимое под хешем не меняется:
+        `Cache-Control: private, max-age=31536000, immutable`, `ETag` — хеш в кавычках.
+      tags: [blobs]
+      parameters:
+        - name: sha256
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Sha256"
+      responses:
+        "200":
+          description: Картинка.
+          content:
+            image/jpeg:
+              schema: {}
+        "304":
+          description: Не изменилась (`If-None-Match`).
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
   /api/invites:
     get:
       operationId: listInvites
@@ -378,10 +456,20 @@ components:
       minLength: 8
       maxLength: 128
 
+    Sha256:
+      type: string
+      pattern: "^[0-9a-f]{64}$"
+      description: SHA-256 в hex, строчными.
+
     User:
       type: object
-      required: [id, login, displayName, isAdmin, createdAt]
+      required: [id, login, displayName, isAdmin, createdAt, avatar]
       properties:
+        avatar:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256"
+            - type: "null"
+          description: Аватар — GET /api/blobs/{sha256}; null — нет.
         id:
           type: string
           format: uuid
@@ -501,3 +589,5 @@ tags:
     description: Регистрация, вход, сессии.
   - name: invites
     description: Инвайты на регистрацию (только администратор).
+  - name: blobs
+    description: Картинки по SHA-256 содержимого.

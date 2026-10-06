@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -17,10 +18,16 @@ type userResponse struct {
 	DisplayName string    `json:"displayName"`
 	IsAdmin     bool      `json:"isAdmin"`
 	CreatedAt   time.Time `json:"createdAt"`
+	Avatar      *string   `json:"avatar"` // SHA-256 в hex: GET /api/blobs/{sha256}
 }
 
 func toUserResponse(u dbq.User) userResponse {
-	return userResponse{ID: u.ID, Login: u.Login, DisplayName: u.DisplayName, IsAdmin: u.IsAdmin, CreatedAt: u.CreatedAt}
+	r := userResponse{ID: u.ID, Login: u.Login, DisplayName: u.DisplayName, IsAdmin: u.IsAdmin, CreatedAt: u.CreatedAt}
+	if u.AvatarSha256 != nil {
+		avatar := hex.EncodeToString(u.AvatarSha256)
+		r.Avatar = &avatar
+	}
+	return r
 }
 
 // Token — для Android; веб использует cookie.
