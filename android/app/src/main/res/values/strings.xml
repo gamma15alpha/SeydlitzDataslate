@@ -28,8 +28,56 @@
     <string name="android_app">Android-приложение</string>
     <string name="unknown_device">Неизвестное устройство</string>
 
-    <string name="demo_link">Демо-анкета</string>
-    <string name="demo_title">Демо-анкета</string>
+    <string name="nav_sheets">Анкеты</string>
+    <string name="nav_reference">Справочник</string>
+    <string name="nav_profile">Профиль</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="reference_soon">Справочник появится вместе с каталогом контента.</string>
+    <string name="ui_lang">Язык интерфейса</string>
+
+    <string name="sheets_create">Создать анкету</string>
+    <string name="sheets_import">Импорт из файла</string>
+    <string name="sheets_new_name">Новый аколит</string>
+    <string name="sheets_empty">Анкет пока нет — создайте новую или импортируйте из файла.</string>
+    <string name="sheets_player">игрок: %1$s</string>
+    <string name="sheets_updated">изменена %1$s</string>
+    <string name="sheets_imported">Импортирована «%1$s»</string>
+    <string name="sheets_conflict">Анкета «%1$s» уже есть. Что сделать с файлом?</string>
+    <string name="sheets_conflict_existing">Здесь — изменена %1$s</string>
+    <string name="sheets_conflict_incoming">В файле — изменена %1$s</string>
+    <string name="sheets_replace">Заменить</string>
+    <string name="sheets_keep_both">Сохранить копией</string>
+    <string name="cancel">Отмена</string>
+    <string name="import_error_NOT_JSON">Это не JSON-файл.</string>
+    <string name="import_error_NOT_CHARACTER">Это не файл анкеты.</string>
+    <string name="import_error_FORMAT_TOO_NEW">Файл из более новой версии программы — обновите приложение.</string>
+    <string name="import_error_UNKNOWN_SYSTEM">Анкета другой игровой системы — пока поддерживается только Dark Heresy.</string>
+    <string name="import_error_SHEET_TOO_NEW">Лист из более новой версии программы — обновите приложение.</string>
+    <string name="import_error_INVALID">Файл анкеты повреждён.</string>
+    <string name="file_read_failed">Не удалось прочитать или записать файл.</string>
+
+    <string name="sheet_name">Имя</string>
+    <string name="sheet_custom">Своё значение</string>
+    <string name="sheet_none">не выбрано</string>
+    <string name="sheet_export">Экспорт в файл</string>
+    <string name="sheet_delete">Удалить анкету</string>
+    <string name="sheet_delete_confirm">Удалить «%1$s» на всех устройствах? Это не отменить — сначала можно сделать экспорт.</string>
+    <string name="sheet_delete_yes">Удалить</string>
+    <string name="sheet_save_failed">Не удалось сохранить: хранилище недоступно или переполнено. Сделайте экспорт в файл.</string>
+    <string name="sheet_not_found">Анкета не найдена.</string>
+
+    <string name="sync_conflict">«%1$s» изменили и здесь, и на другом устройстве. Какую версию оставить?</string>
+    <string name="sync_local">Здесь: %1$s</string>
+    <string name="sync_server">На сервере: %1$s</string>
+    <string name="sync_changed">изменена %1$s</string>
+    <string name="sync_deleted">удалена</string>
+    <string name="sync_keep_mine">Эту</string>
+    <string name="sync_take_server">С сервера</string>
+    <string name="sync_keep_both">Обе (эта — копией)</string>
+    <string name="sync_offline">Нет связи с сервером — изменения отправятся, когда она появится.</string>
+    <string name="sync_error">Не удалось синхронизировать анкеты, повторим позже.</string>
+    <string name="sync_retry">Повторить</string>
+
     <string name="player">Игрок</string>
     <string name="homeworld">Родной мир</string>
     <string name="career">Карьера</string>

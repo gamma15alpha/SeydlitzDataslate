@@ -6,14 +6,19 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -79,24 +84,61 @@ class ApiClient(
         setBody(body)
     }
 
+    suspend fun characterChanges(since: Long): ApiResult<CharacterChanges> =
+        call { get("api/characters") { parameter("since", since) } }
+
+    // Файл анкеты уходит как есть (TextContent мимо ContentNegotiation): сервер хранит его без разбора.
+    suspend fun putCharacter(id: String, json: String, base: Long): ApiResult<CharacterWrite> = characterWrite {
+        put("api/characters/$id") {
+            precondition(base)
+            setBody(TextContent(json, ContentType.Application.Json))
+        }
+    }
+
+    suspend fun deleteCharacter(id: String, base: Long): ApiResult<CharacterWrite> = characterWrite {
+        delete("api/characters/$id") { precondition(base) }
+    }
+
+    private fun HttpRequestBuilder.precondition(base: Long) {
+        if (base == 0L) headers[HttpHeaders.IfNoneMatch] = "*" else headers[HttpHeaders.IfMatch] = "\"$base\""
+    }
+
+    // 412 — не ошибка: в теле версия сервера, клиент предложит выбор.
+    private suspend inline fun characterWrite(send: HttpClient.() -> HttpResponse): ApiResult<CharacterWrite> {
+        val response = try {
+            client.send()
+        } catch (e: IOException) {
+            return ApiResult.Offline(e)
+        }
+        val conflict = response.status == HttpStatusCode.PreconditionFailed
+        return when (val r = response.result<StoredCharacter>(conflict)) {
+            is ApiResult.Ok -> ApiResult.Ok(if (conflict) CharacterWrite.Conflict(r.value) else CharacterWrite.Written(r.value))
+            is ApiResult.Problem -> r
+        }
+    }
+
     private suspend inline fun <reified T> call(send: HttpClient.() -> HttpResponse): ApiResult<T> {
         val response = try {
             client.send()
         } catch (e: IOException) {
             return ApiResult.Offline(e)
         }
-        response.headers["X-Session-Token"]?.let { onNewToken(it) }
+        return response.result()
+    }
+
+    private suspend inline fun <reified T> HttpResponse.result(acceptError: Boolean = false): ApiResult<T> {
+        headers["X-Session-Token"]?.let { onNewToken(it) }
         val failure = ApiResult.Failure(
-            status = response.status.value,
+            status = status.value,
             code = null,
-            requestId = response.headers["X-Request-ID"],
-            retryAfterSeconds = response.headers["Retry-After"]?.toLongOrNull(),
+            requestId = headers["X-Request-ID"],
+            retryAfterSeconds = headers["Retry-After"]?.toLongOrNull(),
         )
-        if (response.status.isSuccess()) {
+        if (status.isSuccess() || acceptError) {
             if (T::class == Unit::class) return ApiResult.Ok(Unit as T)
             // Неожиданное тело — ошибка сервера, а не падение приложения.
-            return runCatching { ApiResult.Ok(response.body<T>()) }.getOrElse { failure.copy(code = "bad_response") }
+            return runCatching { ApiResult.Ok(body<T>()) }.getOrElse { failure.copy(code = "bad_response") }
         }
-        return failure.copy(code = runCatching { response.body<ApiError>() }.getOrNull()?.code)
+        return failure.copy(code = runCatching { body<ApiError>() }.getOrNull()?.code)
     }
 }

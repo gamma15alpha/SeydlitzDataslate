@@ -55,6 +55,12 @@ class AuthRepository(
 
     suspend fun deleteOtherSessions() = authed { api.deleteOtherSessions() }
 
+    suspend fun characterChanges(since: Long) = authed { api.characterChanges(since) }
+
+    suspend fun putCharacter(id: String, json: String, base: Long) = authed { api.putCharacter(id, json, base) }
+
+    suspend fun deleteCharacter(id: String, base: Long) = authed { api.deleteCharacter(id, base) }
+
     // 401 на запросе с сессией — она истекла или отозвана: выходим.
     private suspend fun <T> authed(call: suspend () -> ApiResult<T>): ApiResult<T> {
         val result = call()

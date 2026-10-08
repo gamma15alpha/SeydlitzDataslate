@@ -2,6 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+}
+
+// Схемы базы — в git: по ним Room проверяет миграции.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 // Адрес API: -Pdataslate.apiUrl=… или в gradle.properties. Debug по умолчанию — компьютер разработчика из эмулятора.
@@ -35,8 +42,8 @@ android {
         }
     }
 
-    // Демо-анкета в debug читает примеры из schemas/examples — те же, что и веб.
-    sourceSets.getByName("debug").assets.directories.add("../../schemas/examples")
+    // Мок-пакет контента — из schemas/examples, тот же, что и у веба; работает всегда, до каталога (срез 4).
+    sourceSets.getByName("main").assets.directories.add("../../schemas/examples")
 
     // Язык приложения можно выбрать в настройках системы (Android 13+); список — из values-*/.
     androidResources {
@@ -73,6 +80,11 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.markdown.renderer.m3)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.process)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

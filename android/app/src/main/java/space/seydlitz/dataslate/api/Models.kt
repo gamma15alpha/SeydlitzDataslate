@@ -1,6 +1,7 @@
 package space.seydlitz.dataslate.api
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 // Модели — по schemas/openapi.yaml.
 
@@ -38,3 +39,23 @@ data class SessionInfo(
 
 @Serializable
 data class ApiError(val error: String, val code: String)
+
+// character — файл анкеты; нет у надгробия и в ответе на запись.
+@Serializable
+data class StoredCharacter(
+    val id: String,
+    val revision: Long,
+    val deleted: Boolean,
+    val updatedAt: String,
+    val character: JsonObject? = null,
+)
+
+@Serializable
+data class CharacterChanges(val cursor: Long, val changes: List<StoredCharacter>)
+
+sealed interface CharacterWrite {
+    data class Written(val stored: StoredCharacter) : CharacterWrite
+
+    // 412: на сервере другая ревизия.
+    data class Conflict(val server: StoredCharacter) : CharacterWrite
+}

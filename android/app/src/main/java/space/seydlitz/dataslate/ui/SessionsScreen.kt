@@ -68,7 +68,7 @@ private fun SessionItem(session: SessionInfo, enabled: Boolean, onEnd: (String) 
 }
 
 @Composable
-private fun formatDate(iso: String): String {
+internal fun formatDate(iso: String): String {
     val locale = LocalConfiguration.current.locales[0]
     val format = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
     return runCatching { OffsetDateTime.parse(iso).atZoneSameInstant(ZoneId.systemDefault()).format(format) }.getOrDefault(iso)

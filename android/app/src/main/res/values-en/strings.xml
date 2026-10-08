@@ -26,8 +26,56 @@
     <string name="android_app">Android app</string>
     <string name="unknown_device">Unknown device</string>
 
-    <string name="demo_link">Demo sheet</string>
-    <string name="demo_title">Demo sheet</string>
+    <string name="nav_sheets">Sheets</string>
+    <string name="nav_reference">Reference</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    <string name="reference_soon">The reference will arrive together with the content catalog.</string>
+    <string name="ui_lang">Interface language</string>
+
+    <string name="sheets_create">New sheet</string>
+    <string name="sheets_import">Import from file</string>
+    <string name="sheets_new_name">New acolyte</string>
+    <string name="sheets_empty">No sheets yet — create one or import it from a file.</string>
+    <string name="sheets_player">player: %1$s</string>
+    <string name="sheets_updated">updated %1$s</string>
+    <string name="sheets_imported">Imported “%1$s”</string>
+    <string name="sheets_conflict">Sheet “%1$s” already exists. What to do with the file?</string>
+    <string name="sheets_conflict_existing">Here — updated %1$s</string>
+    <string name="sheets_conflict_incoming">In the file — updated %1$s</string>
+    <string name="sheets_replace">Replace</string>
+    <string name="sheets_keep_both">Save as a copy</string>
+    <string name="cancel">Cancel</string>
+    <string name="import_error_NOT_JSON">This is not a JSON file.</string>
+    <string name="import_error_NOT_CHARACTER">This is not a character sheet file.</string>
+    <string name="import_error_FORMAT_TOO_NEW">The file comes from a newer version — update the app.</string>
+    <string name="import_error_UNKNOWN_SYSTEM">A sheet for another game system — only Dark Heresy is supported for now.</string>
+    <string name="import_error_SHEET_TOO_NEW">The sheet comes from a newer version — update the app.</string>
+    <string name="import_error_INVALID">The sheet file is damaged.</string>
+    <string name="file_read_failed">Couldn\'t read or write the file.</string>
+
+    <string name="sheet_name">Name</string>
+    <string name="sheet_custom">Custom value</string>
+    <string name="sheet_none">not set</string>
+    <string name="sheet_export">Export to file</string>
+    <string name="sheet_delete">Delete sheet</string>
+    <string name="sheet_delete_confirm">Delete “%1$s” on all devices? This can\'t be undone — export it first if needed.</string>
+    <string name="sheet_delete_yes">Delete</string>
+    <string name="sheet_save_failed">Couldn\'t save: storage is unavailable or full. Export the sheet to a file.</string>
+    <string name="sheet_not_found">Sheet not found.</string>
+
+    <string name="sync_conflict">“%1$s” was changed both here and on another device. Which version to keep?</string>
+    <string name="sync_local">Here: %1$s</string>
+    <string name="sync_server">On the server: %1$s</string>
+    <string name="sync_changed">changed %1$s</string>
+    <string name="sync_deleted">deleted</string>
+    <string name="sync_keep_mine">This one</string>
+    <string name="sync_take_server">Server\'s</string>
+    <string name="sync_keep_both">Both (this one as a copy)</string>
+    <string name="sync_offline">No connection to the server — changes will be sent when it\'s back.</string>
+    <string name="sync_error">Couldn\'t sync sheets, will retry later.</string>
+    <string name="sync_retry">Retry</string>
+
     <string name="player">Player</string>
     <string name="homeworld">Home world</string>
     <string name="career">Career</string>
