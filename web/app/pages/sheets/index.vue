@@ -4,6 +4,7 @@ const { t, locale } = useI18n()
 const { text } = useContentLocale()
 
 const dateFormat = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }))
+const dateTimeFormat = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }))
 
 function choiceText(section: string, value?: Choice) {
   if (!value) return undefined
@@ -12,35 +13,88 @@ function choiceText(section: string, value?: Choice) {
   return entry ? text(entry.name) : value.id
 }
 
-const cards = computed(() => demoCharacters.map((c) => {
-  const sheet = c.sheet as Dh1Sheet
+const { list, refresh, create, importText, replace, importAsCopy } = useCharacters()
+const { user } = useAuth()
+onMounted(refresh)
+
+const cards = computed(() => list.value?.map((c) => {
+  const sheet = c.sheet
   return {
     id: c.id,
     name: c.name,
     system: SYSTEM_NAMES[c.system] ?? c.system,
-    player: sheet.player,
+    player: authorName(c, user.value),
     career: [choiceText('careers', sheet.career), choiceText('ranks', sheet.rank)].filter(Boolean).join(' · '),
     updated: dateFormat.value.format(new Date(c.updatedAt)),
   }
 }))
+
+async function createSheet() {
+  const character = await create(t('sheets.newName'))
+  await navigateTo(`/sheets/${character.id}`)
+}
+
+const fileInput = ref<HTMLInputElement>()
+const notice = ref<{ text: string; error?: boolean }>()
+const conflict = ref<{ existing: CharacterFile; incoming: CharacterFile }>()
+
+async function onFile() {
+  const file = fileInput.value?.files?.[0]
+  fileInput.value!.value = ''
+  if (!file) return
+  conflict.value = undefined
+  const r = await importText(await file.text())
+  if ('error' in r) notice.value = { text: t(`sheets.importError.${r.error}`), error: true }
+  else if ('conflict' in r) {
+    notice.value = undefined
+    conflict.value = r.conflict
+  } else await imported(r.imported)
+}
+
+async function imported(character: CharacterFile) {
+  conflict.value = undefined
+  notice.value = { text: t('sheets.imported', { name: character.name }) }
+  await refresh()
+}
+
+async function resolve(how: 'replace' | 'copy') {
+  const incoming = conflict.value!.incoming
+  if (how === 'replace') {
+    await replace(incoming)
+    await imported(incoming)
+  } else await imported(await importAsCopy(incoming))
+}
 </script>
 
 <template>
   <div class="sheets">
     <div class="actions">
-      <button type="button" disabled :title="t('sheets.soon')">{{ t('sheets.create') }}</button>
-      <button type="button" disabled :title="t('sheets.soon')">{{ t('sheets.import') }}</button>
-      <span class="muted soon">{{ t('sheets.soon') }}</span>
+      <button type="button" @click="createSheet">{{ t('sheets.create') }}</button>
+      <button type="button" @click="fileInput?.click()">{{ t('sheets.import') }}</button>
+      <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onFile">
     </div>
 
-    <p v-if="!cards.length" class="panel muted">{{ t('sheets.empty') }}</p>
+    <p v-if="notice" class="panel" :class="{ warning: notice.error }" role="status">{{ notice.text }}</p>
+    <div v-if="conflict" class="panel conflict" role="alertdialog">
+      <p>{{ t('sheets.conflict', { name: conflict.existing.name }) }}</p>
+      <p class="muted">{{ t('sheets.conflictExisting', { date: dateTimeFormat.format(new Date(conflict.existing.updatedAt)) }) }}</p>
+      <p class="muted">{{ t('sheets.conflictIncoming', { date: dateTimeFormat.format(new Date(conflict.incoming.updatedAt)) }) }}</p>
+      <div class="actions">
+        <button type="button" @click="resolve('replace')">{{ t('sheets.replace') }}</button>
+        <button type="button" @click="resolve('copy')">{{ t('sheets.keepBoth') }}</button>
+        <button type="button" @click="conflict = undefined">{{ t('sheets.cancel') }}</button>
+      </div>
+    </div>
+
+    <p v-if="!cards" class="panel muted">{{ t('sheets.loading') }}</p>
+    <p v-else-if="!cards.length" class="panel muted">{{ t('sheets.empty') }}</p>
     <ul v-else class="cards">
       <li v-for="c in cards" :key="c.id">
         <NuxtLink :to="`/sheets/${c.id}`" class="panel card">
           <span class="system">{{ c.system }}</span>
           <span class="name">{{ c.name }}</span>
           <span v-if="c.career">{{ c.career }}</span>
-          <span class="muted meta">{{ t('sheets.player', { player: c.player }) }} · {{ t('sheets.updated', { date: c.updated }) }}</span>
+          <span class="muted meta"><template v-if="c.player">{{ t('sheets.player', { player: c.player }) }} · </template>{{ t('sheets.updated', { date: c.updated }) }}</span>
         </NuxtLink>
       </li>
     </ul>
@@ -64,12 +118,17 @@ const cards = computed(() => demoCharacters.map((c) => {
   align-items: center;
 }
 
-.actions button:disabled {
-  cursor: not-allowed;
+.sheets > p.panel {
+  margin: 0;
 }
 
-.soon {
-  font-size: var(--text-xs);
+.conflict {
+  display: grid;
+  gap: 6px;
+}
+
+.conflict p {
+  margin: 0;
 }
 
 .cards {

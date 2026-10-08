@@ -7,8 +7,8 @@
   "name": "Аколит Вэйн",
   "createdAt": "2026-10-05T10:00:00Z",
   "updatedAt": "2026-10-05T10:00:00Z",
+  "author": { "id": "01a10b11-5548-7ede-bc93-5138076db171", "name": "Игрок" },
   "sheet": {
-    "player": "Игрок",
     "homeworld": { "id": "test-forge" },
     "career": { "id": "test-scribe" },
     "rank": { "custom": "Младший архивариус" },

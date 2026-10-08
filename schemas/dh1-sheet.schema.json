@@ -6,6 +6,7 @@
   "type": "object",
   "properties": {
     "player": {
+      "description": "Устарело: игрок — author в конверте. Читается из старых файлов, клиенты не показывают и не пишут.",
       "type": "string"
     },
     "homeworld": {

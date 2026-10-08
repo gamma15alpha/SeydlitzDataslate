@@ -141,11 +141,37 @@
   "sheets": {
     "create": "New sheet",
     "import": "Import from file",
-    "soon": "Creating and importing sheets comes in the next slices.",
-    "empty": "No sheets yet.",
+    "newName": "New acolyte",
+    "empty": "No sheets yet. Create one or import a file.",
+    "loading": "Loading…",
     "player": "player: {player}",
     "updated": "updated {date}",
     "notFound": "Sheet not found.",
-    "toList": "Back to sheets"
+    "toList": "Back to sheets",
+    "imported": "Imported “{name}”.",
+    "conflict": "“{name}” is already here.",
+    "conflictExisting": "In the list — updated {date}",
+    "conflictIncoming": "In the file — updated {date}",
+    "replace": "Replace",
+    "keepBoth": "Keep as a copy",
+    "cancel": "Cancel",
+    "importError": {
+      "NOT_JSON": "Can't read the file: it isn't JSON.",
+      "NOT_CHARACTER": "This isn't a Seydlitz Dataslate character file.",
+      "FORMAT_TOO_NEW": "The file comes from a newer version of the app — update it.",
+      "UNKNOWN_SYSTEM": "The sheet's game system isn't supported.",
+      "SHEET_TOO_NEW": "The sheet comes from a newer version of the app — update it.",
+      "INVALID": "The character file is damaged or malformed."
+    }
+  },
+  "sheet": {
+    "name": "Name",
+    "custom": "Custom value",
+    "none": "not set",
+    "export": "Export to file",
+    "delete": "Delete sheet",
+    "deleteConfirm": "Delete “{name}”? This can't be undone — export it first if needed.",
+    "deleteYes": "Delete",
+    "saveFailed": "Couldn't save: browser storage is unavailable or full. Export the sheet to a file."
   }
 }

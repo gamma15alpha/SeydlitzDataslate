@@ -98,7 +98,7 @@ fun DemoScreen(onBack: () -> Unit) {
             val sheet = d.character.sheet
 
             Text(d.character.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
-            Field(stringResource(R.string.player)) { Text(sheet.player.orEmpty()) }
+            Field(stringResource(R.string.player)) { Text(d.character.author?.name ?: "—") }
             Field(stringResource(R.string.homeworld)) { ChoiceTerm(content, "homeworlds", sheet.homeworld, open) }
             Field(stringResource(R.string.career)) { ChoiceTerm(content, "careers", sheet.career, open) }
             Field(stringResource(R.string.rank)) { ChoiceTerm(content, "ranks", sheet.rank, open) }

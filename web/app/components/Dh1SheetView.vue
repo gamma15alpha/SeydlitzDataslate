@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { Dh1Session } from 'dataslate-core'
 
-const props = defineProps<{ character: Character }>()
+// Правки — прямо в объекте анкеты; сохраняет страница.
+const character = defineModel<CharacterFile>({ required: true })
+const sheet = computed(() => character.value.sheet)
 const { t } = useI18n()
+const { user } = useAuth()
+const player = computed(() => authorName(character.value, user.value))
+const mine = computed(() => !!user.value && character.value.author?.id === user.value.id)
 
 const content = demoContent
-const sheet = props.character.sheet as Dh1Sheet
 const CHARACTERISTICS = ['ws', 'bs', 's', 't', 'ag', 'int', 'per', 'wp', 'fel']
 
 function choice(section: string, value?: Choice) {
@@ -14,15 +18,28 @@ function choice(section: string, value?: Choice) {
   return { entry: findEntry(content, `${section}/${value.id}`), custom: undefined }
 }
 
-const evaluation = new Dh1Session(JSON.stringify({ system: 'dh1', content })).evaluate(JSON.stringify(props.character), 'ru')
+// Ранги — выбранной карьеры; карьера своя или не выбрана — всех.
+const rankEntries = computed(() => {
+  const career = sheet.value.career
+  const careers = career && 'id' in career ? content.careers?.filter(c => c.id === career.id) : content.careers
+  return careers?.flatMap(c => c.ranks ?? []) ?? []
+})
+
+watch(() => sheet.value.career, () => {
+  const rank = sheet.value.rank
+  if (rank && 'id' in rank && !rankEntries.value.some(r => r.id === rank.id)) delete sheet.value.rank
+})
+
+const session = new Dh1Session(JSON.stringify({ system: 'dh1', content }))
+const evaluation = computed(() => session.evaluate(JSON.stringify(character.value), 'ru'))
 
 const characteristics = computed(() => CHARACTERISTICS.map((id) => {
-  const stat = evaluation.characteristics.find(s => s.id === id)
+  const stat = evaluation.value.characteristics.find(s => s.id === id)
   const sources = stat?.contributions.map(c => `${c.source}: ${c.value}`).join(', ')
   return { id, value: stat?.value ?? undefined, sources, entry: findEntry(content, `characteristics/${id}`) ?? { id, name: id.toUpperCase() } }
 }))
 
-const skills = computed(() => (sheet.skills ?? []).map((s, i) => ({
+const skills = computed(() => (sheet.value.skills ?? []).map((s, i) => ({
   key: i,
   entry: findEntry(content, `skills/${s.skill}`) ?? { id: s.skill, name: s.skill },
   specialization: choice('specializations', s.specialization),
@@ -85,17 +102,17 @@ function navigate(ref: string, from?: RefWindow) {
 <template>
   <div class="demo" :class="{ 'with-article': !desktop && opened.length }">
     <div>
-      <p class="muted">{{ t('demo.title') }}</p>
-      <dl>
-        <dt>{{ t('demo.player') }}</dt>
-        <dd>{{ sheet.player }}</dd>
-        <dt>{{ t('demo.homeworld') }}</dt>
-        <dd><ContentTerm v-bind="choice('homeworlds', sheet.homeworld)" @open="open" /></dd>
-        <dt>{{ t('demo.career') }}</dt>
-        <dd><ContentTerm v-bind="choice('careers', sheet.career)" @open="open" /></dd>
-        <dt>{{ t('demo.rank') }}</dt>
-        <dd><ContentTerm v-bind="choice('ranks', sheet.rank)" @open="open" /></dd>
-      </dl>
+      <div class="header">
+        <label>{{ t('sheet.name') }}<input v-model="character.name" required></label>
+        <div class="field">
+          <span>{{ t('demo.player') }}</span>
+          <NuxtLink v-if="mine" to="/profile">{{ player }}</NuxtLink>
+          <span v-else :class="{ muted: !player }">{{ player ?? '—' }}</span>
+        </div>
+        <ChoiceField v-model="sheet.homeworld" :label="t('demo.homeworld')" :entries="content.homeworlds ?? []" @open="open" />
+        <ChoiceField v-model="sheet.career" :label="t('demo.career')" :entries="content.careers ?? []" @open="open" />
+        <ChoiceField v-model="sheet.rank" :label="t('demo.rank')" :entries="rankEntries" @open="open" />
+      </div>
 
       <h3>{{ t('demo.characteristics') }}</h3>
       <table>
@@ -172,18 +189,18 @@ h3 {
   margin: 0 0 12px;
 }
 
-dl {
+.header {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 24px;
 }
 
-dt {
-  color: var(--phosphor-dim);
-}
-
-dd {
-  margin: 0;
+.header label,
+.header .field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
 }
 
 table {

@@ -51,6 +51,23 @@
       "type": "string",
       "format": "date-time"
     },
+    "author": {
+      "description": "Учётка, создавшая анкету. name — имя на момент записи, для показа без сервера",
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "sheet": {
       "type": "object"
     }

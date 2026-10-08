@@ -59,6 +59,7 @@ class ContentTest {
     fun parsesCharacterV4() {
         val character = ApiJson.decodeFromString<CharacterFile>(example("dh1.character.json"))
         assertEquals(4, character.sheetVersion)
+        assertEquals("Игрок", character.author?.name)
         assertEquals(Choice.Id("test-forge"), character.sheet.homeworld)
         assertEquals(Choice.Custom("Младший архивариус"), character.sheet.rank)
         assertEquals(40, character.sheet.characteristics["int"]?.value)

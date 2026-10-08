@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Dh1Session, pickText, rollDice, testD100, JsModifier } from '../../shared/build/dist/js/productionLibrary/dataslate-core.mjs'
+import { Dh1Session, pickText, rollDice, testD100, JsModifier } from 'dataslate-core'
 import pack from '../../schemas/examples/dh1-mock.content.json?raw'
 import character from '../../schemas/examples/dh1.character.json?raw'
 import { pickText as pickTextTs } from '../app/utils/localizedText'

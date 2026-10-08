@@ -115,6 +115,10 @@ data class Characteristic(val base: Int? = null, val advances: Int = 0, val unna
 @Serializable
 data class SheetSkill(val skill: String, val specialization: Choice? = null, val training: Int = 1)
 
+// target — id стата, например characteristic.ag.
+@Serializable
+data class SheetModifier(val target: String, val value: Int, val reason: String? = null)
+
 @Serializable
 data class Dh1Sheet(
     val player: String? = null,
@@ -122,8 +126,25 @@ data class Dh1Sheet(
     val career: Choice? = null,
     val rank: Choice? = null,
     val characteristics: Map<String, Characteristic> = emptyMap(),
+    val modifiers: List<SheetModifier> = emptyList(),
     val skills: List<SheetSkill> = emptyList(),
 )
 
+// schemas/character.schema.json; даты — ISO 8601 в UTC, сортируются как строки.
 @Serializable
-data class CharacterFile(val id: String, val name: String, val system: String, val sheetVersion: Int, val sheet: Dh1Sheet)
+data class CharacterFile(
+    val format: String,
+    val formatVersion: Int,
+    val id: String,
+    val system: String,
+    val sheetVersion: Int,
+    val name: String,
+    val createdAt: String,
+    val updatedAt: String,
+    val author: Author? = null,
+    val sheet: Dh1Sheet,
+)
+
+// id — учётка на сервере; name — имя на момент записи, чтобы показать без сервера.
+@Serializable
+data class Author(val id: String, val name: String)

@@ -1,6 +1,7 @@
 package space.seydlitz.dataslate.rules
 
-import space.seydlitz.dataslate.content.parseCharacter
+import space.seydlitz.dataslate.content.Dh1Sheet
+import space.seydlitz.dataslate.content.FileJson
 import space.seydlitz.dataslate.content.parseContentPack
 import kotlin.random.Random
 import kotlin.test.Test
@@ -19,10 +20,10 @@ class Dh1EngineTest {
         """,
     ).content
 
-    private fun sheet(characteristics: String, skills: String = "[]") = parseCharacter(
-        """{"id": "x", "name": "N", "system": "dh1", "sheetVersion": 4, "extra": 1,
-           "sheet": {"characteristics": $characteristics, "skills": $skills}}""",
-    ).sheet
+    private fun sheet(characteristics: String, skills: String = "[]") = FileJson.decodeFromString(
+        Dh1Sheet.serializer(),
+        """{"characteristics": $characteristics, "skills": $skills, "extra": 1}""",
+    )
 
     @Test
     fun characteristicSumsSources() {

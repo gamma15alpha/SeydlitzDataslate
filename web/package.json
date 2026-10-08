@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@nuxtjs/i18n": "^10.6.0",
+    "idb": "^8.0.4",
     "markdown-it": "^15.0.2",
     "nuxt": "^4.5.2",
     "openapi-fetch": "^0.17.0",
@@ -27,6 +28,7 @@
     "@types/node": "^26.6.4",
     "@vite-pwa/assets-generator": "^1.0.0",
     "@vite-pwa/nuxt": "^1.1.1",
+    "fake-indexeddb": "^6.2.5",
     "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.3",
     "vitest": "^5.0.3",
