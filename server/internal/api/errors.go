@@ -7,6 +7,7 @@ import (
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/blob"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/character"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/invite"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/session"
 )
@@ -16,7 +17,15 @@ import (
 func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	var invalid *account.InvalidError
 	var tooMany *account.TooManyAttemptsError
+	var conflict *character.ConflictError
 	switch {
+	case errors.As(err, &conflict):
+		w.Header().Set("ETag", revisionTag(conflict.Current.Revision))
+		writeJSON(w, http.StatusPreconditionFailed, toCharacterResponse(conflict.Current, true))
+	case errors.Is(err, character.ErrInvalid):
+		writeError(w, http.StatusBadRequest, "invalid_character", err.Error())
+	case errors.Is(err, character.ErrIDTaken):
+		writeError(w, http.StatusConflict, "id_taken", err.Error())
 	case errors.As(err, &invalid):
 		writeError(w, http.StatusBadRequest, invalid.Code, invalid.Message)
 	case errors.As(err, &tooMany):
@@ -37,7 +46,8 @@ func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusBadRequest, "invalid_image", err.Error())
 	case errors.Is(err, blob.ErrTooLarge):
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", err.Error())
-	case errors.Is(err, invite.ErrNotFound), errors.Is(err, session.ErrNotFound), errors.Is(err, blob.ErrNotFound):
+	case errors.Is(err, invite.ErrNotFound), errors.Is(err, session.ErrNotFound), errors.Is(err, blob.ErrNotFound),
+		errors.Is(err, character.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	default:
 		internalError(w, r, err)

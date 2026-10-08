@@ -422,6 +422,139 @@ paths:
         "4XX":
           $ref: "#/components/responses/Error"
 
+  /api/characters:
+    get:
+      operationId: listCharacterChanges
+      summary: Изменения своих анкет
+      description: |
+        Анкеты текущего пользователя, изменённые после курсора `since`, по порядку изменений.
+        Без `since` (или 0) — все живые анкеты, без надгробий. Ответ даёт новый курсор — его передать
+        в следующий раз. Курсор новее известного серверу (база пересоздана) — ответ как без `since`.
+      tags: [characters]
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Изменения.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cursor, changes]
+                properties:
+                  cursor:
+                    type: integer
+                  changes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StoredCharacter"
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`bad_request` — `since` не число."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
+  /api/characters/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getCharacter
+      summary: Анкета
+      description: Своя анкета, в том числе надгробие. `ETag` — ревизия.
+      tags: [characters]
+      responses:
+        "200":
+          description: Анкета.
+          headers:
+            ETag:
+              $ref: "#/components/headers/Revision"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoredCharacter"
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: putCharacter
+      summary: Создать или изменить анкету
+      description: |
+        Тело — файл анкеты (`character.schema.json`); `id` в нём — как в пути. Лист сервер не проверяет.
+        Нужен ровно один заголовок условия: `If-None-Match: *` — создать, `If-Match: "<ревизия>"` — изменить
+        версию с этой ревизией (в том числе вернуть удалённую). Надгробие можно перезаписать так же.
+      tags: [characters]
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+        - name: If-None-Match
+          in: header
+          schema:
+            const: "*"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "character.schema.json"
+      responses:
+        "200":
+          $ref: "#/components/responses/CharacterWritten"
+        "201":
+          $ref: "#/components/responses/CharacterWritten"
+        "400":
+          $ref: "#/components/responses/Error"
+          description: "`invalid_character` — не файл анкеты или `id` не как в пути."
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found` — `If-Match`, а анкеты на сервере нет: создать заново через `If-None-Match: *`."
+        "409":
+          $ref: "#/components/responses/Error"
+          description: "`id_taken` — анкета с этим id есть у другого пользователя; сохранить под новым id."
+        "412":
+          $ref: "#/components/responses/CharacterConflict"
+        "413":
+          $ref: "#/components/responses/Error"
+          description: "`too_large` — больше 256 КБ."
+        "428":
+          $ref: "#/components/responses/Error"
+          description: "`precondition_required` — нет `If-Match` или `If-None-Match: *`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: deleteCharacter
+      summary: Удалить анкету
+      description: Оставляет надгробие — удаление дойдёт до других устройств. Удалённую — 200 без изменений.
+      tags: [characters]
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/CharacterWritten"
+        "404":
+          $ref: "#/components/responses/Error"
+          description: "`not_found`."
+        "409":
+          $ref: "#/components/responses/Error"
+          description: "`id_taken` — анкета другого пользователя."
+        "412":
+          $ref: "#/components/responses/CharacterConflict"
+        "428":
+          $ref: "#/components/responses/Error"
+          description: "`precondition_required` — нет `If-Match`."
+        "4XX":
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     cookieAuth:
@@ -528,6 +661,27 @@ components:
           type: string
           description: Логин зарегистрировавшегося (нет поля, если пользователь удалён).
 
+    StoredCharacter:
+      type: object
+      required: [id, revision, deleted, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 1
+          description: Растёт на 1 с каждой записью; для `If-Match`.
+        deleted:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+          description: Время записи на сервере.
+        character:
+          $ref: "character.schema.json"
+          description: Нет у надгробия и в ответе на запись (там клиент и так знает содержимое).
+
     Error:
       type: object
       required: [error, code]
@@ -545,7 +699,42 @@ components:
             остальные — в описаниях ответов конкретных операций.
           examples: ["not_found"]
 
+  parameters:
+    IfMatch:
+      name: If-Match
+      in: header
+      description: Ревизия в кавычках, на которой основана правка.
+      schema:
+        type: string
+        pattern: '^"[0-9]+"$'
+        examples: ['"3"']
+
+  headers:
+    Revision:
+      description: Ревизия в кавычках.
+      schema:
+        type: string
+
   responses:
+    CharacterWritten:
+      description: Записано (201 — создано). Без `character`.
+      headers:
+        ETag:
+          $ref: "#/components/headers/Revision"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StoredCharacter"
+
+    CharacterConflict:
+      description: |
+        На сервере другая ревизия (или анкета уже есть при `If-None-Match: *`). Тело — не ошибка,
+        а версия сервера, с `character`, если не удалена: клиент предлагает выбор.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StoredCharacter"
+
     Error:
       description: Ошибка. Для 405 — заголовок Allow.
       content:
@@ -591,3 +780,5 @@ tags:
     description: Инвайты на регистрацию (только администратор).
   - name: blobs
     description: Картинки по SHA-256 содержимого.
+  - name: characters
+    description: Анкеты и их синхронизация (D68).

@@ -17,6 +17,22 @@ type Blob struct {
 	CreatedAt time.Time
 }
 
+type Character struct {
+	ID        uuid.UUID
+	OwnerID   uuid.UUID
+	Revision  int64
+	Seq       int64
+	Data      []byte
+	UpdatedAt time.Time
+}
+
+type CharacterRevision struct {
+	CharacterID uuid.UUID
+	Revision    int64
+	Data        []byte
+	UpdatedAt   time.Time
+}
+
 type Invite struct {
 	ID        uuid.UUID
 	CodeHash  []byte
@@ -48,4 +64,5 @@ type User struct {
 	IsAdmin      bool
 	CreatedAt    time.Time
 	AvatarSha256 []byte
+	CharacterSeq int64
 }

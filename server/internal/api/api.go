@@ -1,5 +1,5 @@
 // Package api — HTTP API сервера; контракт — schemas/openapi.yaml.
-// Только перевод между HTTP и сценариями (account, session, invite, blob): разбор запроса, вызов, ошибка → статус и код.
+// Только перевод между HTTP и сценариями (account, session, invite, blob, character): разбор запроса, вызов, ошибка → статус и код.
 package api
 
 import (
@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/account"
+	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/character"
 	"github.com/gamma15alpha/SeydlitzDataslate/server/internal/db/dbq"
 )
 
@@ -29,13 +30,14 @@ type Config struct {
 }
 
 type server struct {
-	q        *dbq.Queries
-	accounts *account.Service
+	q          *dbq.Queries
+	accounts   *account.Service
+	characters *character.Service
 }
 
 // Все маршруты под /api/: веб и API на одном домене, без CORS.
 func NewHandler(cfg Config) http.Handler {
-	s := &server{q: dbq.New(cfg.Pool), accounts: account.New(cfg.Pool)}
+	s := &server{q: dbq.New(cfg.Pool), accounts: account.New(cfg.Pool), characters: character.New(cfg.Pool)}
 
 	r := chi.NewRouter()
 	if cfg.TrustProxy {
@@ -70,6 +72,10 @@ func NewHandler(cfg Config) http.Handler {
 			r.Get("/sessions", s.listSessions)
 			r.Delete("/sessions", s.deleteOtherSessions)
 			r.Delete("/sessions/{id}", s.deleteSession)
+			r.Get("/characters", s.listCharacterChanges)
+			r.Get("/characters/{id}", s.getCharacter)
+			r.Put("/characters/{id}", s.putCharacter)
+			r.Delete("/characters/{id}", s.deleteCharacter)
 
 			r.Group(func(r chi.Router) {
 				r.Use(requireAdmin)

@@ -63,7 +63,7 @@ func (q *Queries) PutBlob(ctx context.Context, arg PutBlobParams) error {
 
 const setUserAvatar = `-- name: SetUserAvatar :one
 UPDATE users SET avatar_sha256 = $1 WHERE id = $2
-RETURNING id, login, display_name, password_hash, is_admin, created_at, avatar_sha256
+RETURNING id, login, display_name, password_hash, is_admin, created_at, avatar_sha256, character_seq
 `
 
 type SetUserAvatarParams struct {
@@ -82,6 +82,7 @@ func (q *Queries) SetUserAvatar(ctx context.Context, arg SetUserAvatarParams) (U
 		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.AvatarSha256,
+		&i.CharacterSeq,
 	)
 	return i, err
 }
