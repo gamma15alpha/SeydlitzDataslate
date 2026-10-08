@@ -13,9 +13,12 @@ function choiceText(section: string, value?: Choice) {
   return entry ? text(entry.name) : value.id
 }
 
-const { list, refresh, create, importText, replace, importAsCopy } = useCharacters()
+const { list, refresh, create, importText, replace, importAsCopy, syncState, conflicts, sync } = useCharacters()
 const { user } = useAuth()
-onMounted(refresh)
+onMounted(async () => {
+  await refresh()
+  void sync()
+})
 
 const cards = computed(() => list.value?.map((c) => {
   const sheet = c.sheet
@@ -86,6 +89,12 @@ async function resolve(how: 'replace' | 'copy') {
       </div>
     </div>
 
+    <p v-if="syncState === 'offline' || syncState === 'error'" class="panel muted sync" role="status">
+      {{ t(`sync.${syncState}`) }}
+      <button type="button" @click="sync">{{ t('sync.retry') }}</button>
+    </p>
+    <SyncConflict v-for="c in conflicts" :key="c.id" :conflict="c" />
+
     <p v-if="!cards" class="panel muted">{{ t('sheets.loading') }}</p>
     <p v-else-if="!cards.length" class="panel muted">{{ t('sheets.empty') }}</p>
     <ul v-else class="cards">
@@ -125,6 +134,13 @@ async function resolve(how: 'replace' | 'copy') {
 .conflict {
   display: grid;
   gap: 6px;
+}
+
+.sync {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
 }
 
 .conflict p {

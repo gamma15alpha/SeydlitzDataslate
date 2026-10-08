@@ -170,8 +170,22 @@
     "none": "not set",
     "export": "Export to file",
     "delete": "Delete sheet",
-    "deleteConfirm": "Delete “{name}”? This can't be undone — export it first if needed.",
+    "deleteConfirm": "Delete “{name}” on all devices? This can't be undone — export it first if needed.",
     "deleteYes": "Delete",
     "saveFailed": "Couldn't save: browser storage is unavailable or full. Export the sheet to a file."
+  },
+  "sync": {
+    "conflict": "“{name}” was changed both here and on another device. Which version to keep?",
+    "local": "Here: {state}",
+    "server": "On the server: {state}",
+    "changed": "changed {date}",
+    "deleted": "deleted",
+    "keepMine": "This one",
+    "takeServer": "Server's",
+    "keepBoth": "Both (this one as a copy)",
+    "offline": "No connection to the server — changes will be sent when it's back.",
+    "error": "Couldn't sync sheets, will retry later.",
+    "retry": "Retry",
+    "renamed": "Another player already has a sheet with this id — yours was saved as a copy."
   }
 }

@@ -263,6 +263,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/characters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Изменения своих анкет
+         * @description Анкеты текущего пользователя, изменённые после курсора `since`, по порядку изменений.
+         *     Без `since` (или 0) — все живые анкеты, без надгробий. Ответ даёт новый курсор — его передать
+         *     в следующий раз. Курсор новее известного серверу (база пересоздана) — ответ как без `since`.
+         */
+        get: operations["listCharacterChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Анкета
+         * @description Своя анкета, в том числе надгробие. `ETag` — ревизия.
+         */
+        get: operations["getCharacter"];
+        /**
+         * Создать или изменить анкету
+         * @description Тело — файл анкеты (`character.schema.json`); `id` в нём — как в пути. Лист сервер не проверяет.
+         *     Нужен ровно один заголовок условия: `If-None-Match: *` — создать, `If-Match: "<ревизия>"` — изменить
+         *     версию с этой ревизией (в том числе вернуть удалённую). Надгробие можно перезаписать так же.
+         */
+        put: operations["putCharacter"];
+        post?: never;
+        /**
+         * Удалить анкету
+         * @description Оставляет надгробие — удаление дойдёт до других устройств. Удалённую — 200 без изменений.
+         */
+        delete: operations["deleteCharacter"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -326,6 +380,20 @@ export interface components {
             /** @description Логин зарегистрировавшегося (нет поля, если пользователь удалён). */
             usedBy?: string;
         };
+        StoredCharacter: {
+            /** Format: uuid */
+            id: string;
+            /** @description Растёт на 1 с каждой записью; для `If-Match`. */
+            revision: number;
+            deleted: boolean;
+            /**
+             * Format: date-time
+             * @description Время записи на сервере.
+             */
+            updatedAt: string;
+            /** @description Нет у надгробия и в ответе на запись (там клиент и так знает содержимое). */
+            character?: components["schemas"]["character.schema"];
+        };
         Error: {
             /**
              * @description Описание ошибки для человека.
@@ -341,8 +409,156 @@ export interface components {
              */
             code: string;
         };
+        /** @description Стабильный идентификатор записи каталога; на него ссылается лист персонажа. Не меняется между ревизиями пакета. */
+        id: string;
+        /** @description Значение из каталога контента (id — показывается на языке контента) или своё, введённое игроком (custom — не переводится). */
+        choice: {
+            id: components["schemas"]["id"];
+        } | {
+            custom: string;
+        };
+        characteristic: {
+            /** @description Значение при создании; null — не введено. */
+            base?: number | null;
+            /**
+             * @description Шаги улучшения по +5 (0–4; вне диапазона — диагностика, не ошибка формата).
+             * @default 0
+             */
+            advances: number;
+            /**
+             * @description Множитель бонуса (Unnatural); 1 — обычная характеристика.
+             * @default 1
+             */
+            unnatural: number;
+        };
+        modifier: {
+            /** @description Идентификатор стата, например characteristic.ag. */
+            target: string;
+            value: number;
+            reason?: string;
+        };
+        skill: {
+            /** @description Идентификатор навыка в контенте. */
+            skill: components["schemas"]["id"];
+            specialization?: components["schemas"]["choice"];
+            /**
+             * @description 1 — обучен, 2 — +10, 3 — +20 (вне диапазона — диагностика).
+             * @default 1
+             */
+            training: number;
+        };
+        /**
+         * Dark Heresy 1e sheet (sheetVersion 4)
+         * @description Лист Dark Heresy 1e. Отсутствующие поля читаются как пустые / по умолчанию. v1: только player, homeworld, career, rank; v2: + characteristics, modifiers; v3: + skills; v4: homeworld, career, rank, skills[].specialization — choice вместо строки (миграция: строка s → {"custom": s}). Старые версии мигрируют с пустыми новыми полями.
+         */
+        "dh1-sheet.schema": {
+            /** @description Устарело: игрок — author в конверте. Читается из старых файлов, клиенты не показывают и не пишут. */
+            player?: string;
+            homeworld?: components["schemas"]["choice"];
+            career?: components["schemas"]["choice"];
+            rank?: components["schemas"]["choice"];
+            /** @description Ключи: ws, bs, s, t, ag, int, per, wp, fel. Неизвестные ключи игнорируются. */
+            characteristics?: {
+                [key: string]: components["schemas"]["characteristic"];
+            };
+            /** @description Временные модификаторы, введённые пользователем. */
+            modifiers?: components["schemas"]["modifier"][];
+            /** @description Изученные навыки; необученные базовые берутся из каталога контента. */
+            skills?: components["schemas"]["skill"][];
+            $defs: {
+                /** @description Значение из каталога контента (id — показывается на языке контента) или своё, введённое игроком (custom — не переводится). */
+                choice: {
+                    id: components["schemas"]["id"];
+                } | {
+                    custom: string;
+                };
+                characteristic: {
+                    /** @description Значение при создании; null — не введено. */
+                    base?: number | null;
+                    /**
+                     * @description Шаги улучшения по +5 (0–4; вне диапазона — диагностика, не ошибка формата).
+                     * @default 0
+                     */
+                    advances: number;
+                    /**
+                     * @description Множитель бонуса (Unnatural); 1 — обычная характеристика.
+                     * @default 1
+                     */
+                    unnatural: number;
+                };
+                modifier: {
+                    /** @description Идентификатор стата, например characteristic.ag. */
+                    target: string;
+                    value: number;
+                    reason?: string;
+                };
+                skill: {
+                    /** @description Идентификатор навыка в контенте. */
+                    skill: components["schemas"]["id"];
+                    specialization?: components["schemas"]["choice"];
+                    /**
+                     * @description 1 — обучен, 2 — +10, 3 — +20 (вне диапазона — диагностика).
+                     * @default 1
+                     */
+                    training: number;
+                };
+            };
+        };
+        /**
+         * Seydlitz Dataslate character
+         * @description Файл персонажа: конверт платформы + лист системы. Один формат для хранилища, экспорта и сервера.
+         */
+        "character.schema": {
+            /** @constant */
+            format: "seydlitz.character";
+            /** @description Версия конверта. Клиент отклоняет файлы новее, чем понимает. */
+            formatVersion: number;
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Идентификатор игровой системы; определяет схему поля sheet.
+             * @example dh1
+             */
+            system: string;
+            /** @description Версия формата листа системы. Старые версии модуль системы мигрирует, новее — отклоняет. */
+            sheetVersion: number;
+            name: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Учётка, создавшая анкету. name — имя на момент записи, для показа без сервера */
+            author?: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            sheet: Record<string, never>;
+        } & unknown;
     };
     responses: {
+        /** @description Записано (201 — создано). Без `character`. */
+        CharacterWritten: {
+            headers: {
+                ETag: components["headers"]["Revision"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["StoredCharacter"];
+            };
+        };
+        /**
+         * @description На сервере другая ревизия (или анкета уже есть при `If-None-Match: *`). Тело — не ошибка,
+         *     а версия сервера, с `character`, если не удалена: клиент предлагает выбор.
+         */
+        CharacterConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["StoredCharacter"];
+            };
+        };
         /** @description Ошибка. Для 405 — заголовок Allow. */
         Error: {
             headers: {
@@ -377,9 +593,15 @@ export interface components {
             };
         };
     };
-    parameters: never;
+    parameters: {
+        /** @description Ревизия в кавычках, на которой основана правка. */
+        IfMatch: string;
+    };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /** @description Ревизия в кавычках. */
+        Revision: string;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -785,6 +1007,120 @@ export interface operations {
             };
             /** @description `not_found` — нет такого или уже использован. */
             404: components["responses"]["Error"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    listCharacterChanges: {
+        parameters: {
+            query?: {
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Изменения. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        cursor: number;
+                        changes: components["schemas"]["StoredCharacter"][];
+                    };
+                };
+            };
+            /** @description `bad_request` — `since` не число. */
+            400: components["responses"]["Error"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    getCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Анкета. */
+            200: {
+                headers: {
+                    ETag: components["headers"]["Revision"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredCharacter"];
+                };
+            };
+            /** @description `not_found`. */
+            404: components["responses"]["Error"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    putCharacter: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Ревизия в кавычках, на которой основана правка. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+                "If-None-Match"?: "*";
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["character.schema"];
+            };
+        };
+        responses: {
+            200: components["responses"]["CharacterWritten"];
+            201: components["responses"]["CharacterWritten"];
+            /** @description `invalid_character` — не файл анкеты или `id` не как в пути. */
+            400: components["responses"]["Error"];
+            /** @description `not_found` — `If-Match`, а анкеты на сервере нет: создать заново через `If-None-Match: *`. */
+            404: components["responses"]["Error"];
+            /** @description `id_taken` — анкета с этим id есть у другого пользователя; сохранить под новым id. */
+            409: components["responses"]["Error"];
+            412: components["responses"]["CharacterConflict"];
+            /** @description `too_large` — больше 256 КБ. */
+            413: components["responses"]["Error"];
+            /** @description `precondition_required` — нет `If-Match` или `If-None-Match: *`. */
+            428: components["responses"]["Error"];
+            "4XX": components["responses"]["Error"];
+        };
+    };
+    deleteCharacter: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Ревизия в кавычках, на которой основана правка. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["CharacterWritten"];
+            /** @description `not_found`. */
+            404: components["responses"]["Error"];
+            /** @description `id_taken` — анкета другого пользователя. */
+            409: components["responses"]["Error"];
+            412: components["responses"]["CharacterConflict"];
+            /** @description `precondition_required` — нет `If-Match`. */
+            428: components["responses"]["Error"];
             "4XX": components["responses"]["Error"];
         };
     };
