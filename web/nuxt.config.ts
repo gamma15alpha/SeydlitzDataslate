@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: { '/api': { target: 'http://127.0.0.1:8090/api', changeOrigin: true } },
   },
+  $development: {
+    serverHandlers: [{ route: '/sw.js', handler: '~~/server/dev/sw.ts' }],
+  },
   alias: {
     'dataslate-core': fileURLToPath(new URL('../shared/build/dist/js/productionLibrary/dataslate-core.mjs', import.meta.url)),
   },
