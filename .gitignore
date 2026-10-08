@@ -22,15 +22,16 @@ web/.yarn/*
 web/.env
 web/.env.*
 
-# Android (Gradle)
-android/.gradle/
-android/.kotlin/
-android/build/
+# Gradle (корень сборки — корень репозитория: android/app и shared)
+/.gradle/
+/.kotlin/
+/build/
+/local.properties
 android/app/build/
-android/local.properties
 android/captures/
-android/*.keystore
-android/*.jks
+*.keystore
+*.jks
+shared/build/
 
 # Сервер (Go)
 server/bin/
