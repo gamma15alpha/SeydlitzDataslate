@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Dh1Session } from 'dataslate-core'
+
 const props = defineProps<{ character: Character }>()
 const { t } = useI18n()
 
@@ -12,10 +14,12 @@ function choice(section: string, value?: Choice) {
   return { entry: findEntry(content, `${section}/${value.id}`), custom: undefined }
 }
 
+const evaluation = new Dh1Session(JSON.stringify({ system: 'dh1', content })).evaluate(JSON.stringify(props.character), 'ru')
+
 const characteristics = computed(() => CHARACTERISTICS.map((id) => {
-  const c = sheet.characteristics?.[id]
-  const value = c?.base == null ? undefined : c.base + 5 * (c.advances ?? 0)
-  return { id, value, entry: findEntry(content, `characteristics/${id}`) ?? { id, name: id.toUpperCase() } }
+  const stat = evaluation.characteristics.find(s => s.id === id)
+  const sources = stat?.contributions.map(c => `${c.source}: ${c.value}`).join(', ')
+  return { id, value: stat?.value ?? undefined, sources, entry: findEntry(content, `characteristics/${id}`) ?? { id, name: id.toUpperCase() } }
 }))
 
 const skills = computed(() => (sheet.skills ?? []).map((s, i) => ({
@@ -97,7 +101,7 @@ function navigate(ref: string, from?: RefWindow) {
       <table>
         <tr v-for="c in characteristics" :key="c.id">
           <td><ContentTerm :entry="c.entry" @open="open" /></td>
-          <td class="value">{{ c.value ?? '—' }}</td>
+          <td class="value" :title="c.sources">{{ c.value ?? '—' }}</td>
         </tr>
       </table>
 

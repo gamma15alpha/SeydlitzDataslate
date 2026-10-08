@@ -4,7 +4,8 @@
 
 | Папка | Стек |
 |---|---|
-| [`web/`](web/README.md) | Nuxt 4, Vue 3, TypeScript; Node 20+, Yarn |
+| [`shared/`](shared/README.md) | Ядро правил: Kotlin Multiplatform (JVM для Android, JS для веба) |
+| [`web/`](web/README.md) | Nuxt 4, Vue 3, TypeScript; Node 20+, Yarn, JDK 21 (ядро) |
 | [`android/`](android/README.md) | Kotlin, Jetpack Compose; JDK 21, Android SDK 37 |
 | [`server/`](server/README.md) | Go, chi, PostgreSQL; Docker для разработки |
 | [`schemas/`](schemas/openapi.yaml) | OpenAPI 3.1, JSON Schema |

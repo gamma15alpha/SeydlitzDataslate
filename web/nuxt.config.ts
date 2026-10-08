@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: { '/api': { target: 'http://127.0.0.1:8090/api', changeOrigin: true } },
   },
+  alias: {
+    'dataslate-core': fileURLToPath(new URL('../shared/build/dist/js/productionLibrary/dataslate-core.mjs', import.meta.url)),
+  },
   // Демо-анкета импортирует примеры из ../schemas/examples.
   vite: {
     server: { fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] } },
